@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-# (c) 2014-2018 The mqttwarn developers
-import os
-import re
+# (c) 2014-2019 The mqttwarn developers
+
 import imp
 import sys
 import json

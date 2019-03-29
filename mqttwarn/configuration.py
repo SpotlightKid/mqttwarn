@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# (c) 2014-2018 The mqttwarn developers
+# (c) 2014-2019 The mqttwarn developers
 import sys
 import ast
 import codecs
