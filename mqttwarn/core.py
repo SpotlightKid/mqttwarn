@@ -388,7 +388,7 @@ def decode_payload(section, topic, payload):
 
     # The dict returned is completely merged into transformation data
     # The difference between this and `get_topic_data()' is that this
-    # function obtains the topic string as well as the payload and any
+    # function receives the topic string as well as the payload and any
     # existing transformation data, and it can do 'things' with all.
     # This is the way it should originally have been, but I can no
     # longer fix the original ... (legacy)
