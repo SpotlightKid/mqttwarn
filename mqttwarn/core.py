@@ -23,12 +23,11 @@ except ImportError:
 HAVE_JINJA = True
 try:
     from jinja2 import Environment, FileSystemLoader
-    jenv = Environment(
-            loader = FileSystemLoader('templates/', encoding='utf-8'),
-            trim_blocks = True)
-    jenv.filters['jsonify'] = json.dumps
 except ImportError:
     HAVE_JINJA = False
+else:
+    jenv = Environment(loader = FileSystemLoader('templates/', encoding='utf-8'), trim_blocks=True)
+    jenv.filters['jsonify'] = json.dumps
 
 import paho.mqtt.client as paho
 import six
