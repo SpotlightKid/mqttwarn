@@ -193,12 +193,13 @@ def on_message(mosq, userdata, msg):
     """
     Message received from the broker
     """
+    logger.debug("Message received on %s: %r", msg.topic, msg.payload)
     topic = msg.topic
+
     try:
         payload = msg.payload.decode('utf-8')
     except UnicodeEncodeError:
         payload = msg.payload
-    logger.debug("Message received on %s: %s" % (topic, payload))
 
     if msg.retain == 1:
         if cf.skipretained:
