@@ -35,7 +35,7 @@ import six
 from .context import RuntimeContext, FunctionInvoker
 from .cron import PeriodicThread
 from .util import (load_function, load_module, timeout, parse_cron_options, sanitize_function_name,
-                   Struct, Formatter, asbool, exception_traceback)
+                   Struct, Formatter, asbool)
 
 
 logger = logging.getLogger(__name__)
@@ -440,8 +440,8 @@ def processor(worker_id=None):
                                 "non-existing target {target} in service {service}".format(**locals())
                 raise KeyError(error_message)
 
-        except Exception as ex:
-            logger.error("Cannot handle service=%s, target=%s: %s\n%s" % (service, target, ex, exception_traceback()))
+        except Exception as exc:
+            logger.exception("Cannot handle service=%s, target=%s: %s", service, target, exc)
             q_in.task_done()
             continue
 
@@ -524,8 +524,9 @@ def load_services(services):
         try:
             service_plugins[service]['module'] = load_module(modulefile)
             logger.info('Successfully loaded service "{}"'.format(service))
-        except Exception as ex:
-            logger.error('Unable to load service "{}" from file "{}": {}'.format(service, modulefile, ex))
+        except Exception as exc:
+            logger.exception('Unable to load service "%s" from file "%s": %s',
+                             service, modulefile, exc)
 
 
 def connect():

@@ -8,9 +8,6 @@ import pkg_resources
 import re
 import string
 import sys
-import traceback
-
-from six import StringIO
 
 try:
     import hashlib
@@ -169,21 +166,3 @@ def load_function(name=None, filepath=None):
 def get_resource_content(package, filename, encoding='utf-8'):
     with pkg_resources.resource_stream(package, filename) as stream:
         return stream.read().decode(encoding)
-
-
-def exception_traceback(exc_info=None):
-    """
-    Return a string containing a traceback message for the given
-    exc_info tuple (as returned by sys.exc_info()).
-
-    from setuptools.tests.doctest
-    """
-
-    if not exc_info:
-        exc_info = sys.exc_info()
-
-    # Get a traceback message.
-    excout = StringIO()
-    exc_type, exc_val, exc_tb = exc_info
-    traceback.print_exception(exc_type, exc_val, exc_tb, file=excout)
-    return excout.getvalue()
