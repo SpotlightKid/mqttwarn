@@ -127,12 +127,10 @@ def sanitize_function_name(s):
     func = None
 
     if s is not None:
-        try:
-            valid = re.match(r'^[\w]+\(\)', s)
-            if valid is not None:
-                func = re.sub('[()]', '', s)
-        except:
-            pass
+        valid = re.match(r'^[\w]+\(\)', s)
+        if valid:
+            func = re.sub('[()]', '', s)
+
     return func
 
 
