@@ -1,112 +1,117 @@
 # -*- coding: utf-8 -*-
-# (c) 2014-2018 The mqttwarn developers
+# (c) 2014-2019 The mqttwarn developers
+"""mqttwarn subscribes to any number of MQTT topics and publishes received payloads to one or more
+notification services after optionally applying sophisticated transformations.
+
+"""
+
 import sys
 from setuptools import setup, find_packages
 
 requires = [
-    'six==1.11.0',
-    'paho-mqtt==1.2',               # 1.3.1
-    'jinja2==2.8',
-    'attrs==17.4.0',
-    'docopt==0.6.2',
-    'requests==2.18.4',
+    'six>=1.11.0',
+    'paho-mqtt>=1.3',
+    'jinja2>=2.8',
+    'attrs>=17.4.0',
+    'docopt>=0.6.2',
+    'requests>=2.18.4',
 ]
 
 extras = {
     'amqp': [
-        'puka==0.0.7',
+        'puka>=0.0.7',
     ],
     'apns': [
-        'apns==2.0.1',
+        'apns>=2.0.1',
     ],
     'asterisk': [
-        'pyst2==0.5.0',
+        'pyst2>=0.5.0',
     ],
     'celery': [
         'celery',
     ],
     'dnsupdate': [
-        'dnspython==1.15.0',
+        'dnspython>=1.15.0',
     ],
     'fbchat': [
-        'fbchat==1.3.6',
+        'fbchat>=1.3.6',
     ],
     'gss': [
-        'gdata==2.0.18',
+        'gdata>=2.0.18',
     ],
     'gss2': [
-        'gspread==2.1.1',
-        'oauth2client==4.1.2',
+        'gspread>=2.1.1',
+        'oauth2client>=4.1.2',
     ],
     'iothub': [
-        'iothub-client==1.1.2.0',
+        'iothub-client>=1.1.2.0',
     ],
     'mysql': [
         'mysql',
     ],
     'nma': [
-        'PyNMA==1.0',
+        'PyNMA>=1.0',
     ],
     'nsca': [
-        'pynsca==1.6',
+        'pynsca>=1.6',
     ],
     'osxnotify': [
-        'pync==1.6.1',
+        'pync>=1.6.1',
     ],
     'pastebinpub': [
-        'Pastebin==1.1.2',
+        'Pastebin>=1.1.2',
     ],
     'postgres': [
-        'psycopg2==2.7.4',
+        'psycopg2>=2.7.4',
     ],
     'prowl': [
         'prowlpy>=0.52',
     ],
     'pushbullet': [
-        'PushbulletPythonLibrary==2.3',
+        'PushbulletPythonLibrary>=2.3',
     ],
     'redispub': [
-        'redis==2.10.6',
+        'redis>=2.10.6',
     ],
     'rrdtool': [
-        'rrdtool==0.1.12',
+        'rrdtool>=0.1.12',
     ],
     'serial': [
-        'pyserial==3.4',
+        'pyserial>=3.4',
     ],
     'slack': [
-        'slacker==0.9.65',
+        'slacker>=0.9.65',
     ],
     'ssh': [
-        'paramiko==2.4.1',
+        'paramiko>=2.4.1',
     ],
     'tootpaste': [
-        'Mastodon.py==1.2.2',
+        'Mastodon.py>=1.2.2',
     ],
     'twilio': [
-        'twilio==6.11.0',
+        'twilio>=6.11.0',
     ],
     'twitter': [
-        'python-twitter==3.4.1',
+        'python-twitter>=3.4.1',
     ],
     'websocket': [
-        'websocket-client==0.47.0',
+        'websocket-client>=0.47.0',
     ],
     'xively': [
         'xively-python',
     ],
     'xmpp': [
-        'xmpppy==0.5.0rc1',
+        'xmpppy>=0.5.0rc1',
     ],
 }
 
-setup(name='mqttwarn',
-      version='0.10.1',
-      description='mqttwarn - subscribe to MQTT topics and notify pluggable services',
-      long_description='mqttwarn subscribes to any number of MQTT topics and publishes received payloads to one or more '
-                       'notification services after optionally applying sophisticated transformations.',
-      license="EPL 2.0",
-      classifiers=[
+setup(
+    name='mqttwarn',
+    version='0.10.1',
+    description='mqttwarn - subscribe to MQTT topics and notify pluggable services',
+    long_description=__doc__,
+    license="EPL 2.0",
+    classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
         "Environment :: Plugins",
@@ -122,6 +127,7 @@ setup(name='mqttwarn',
         "Operating System :: Unix",
         "Operating System :: MacOS",
         "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
         "Topic :: Communications",
         "Topic :: Education",
         "Topic :: Internet",
@@ -140,29 +146,30 @@ setup(name='mqttwarn',
         "Topic :: System :: Systems Administration",
         "Topic :: Text Processing",
         "Topic :: Utilities",
-      ],
-      author='Jan-Piet Mens, Ben Jones',
-      author_email='jpmens()gmail.com, ben.jones12()gmail.com',
-      url='https://github.com/jpmens/mqttwarn',
-      keywords='mqtt notification plugins data acquisition push transformation engine ' +
-               'mosquitto ',
-      packages=find_packages(),
-      include_package_data=True,
-      package_data={
+    ],
+    author='Jan-Piet Mens, Ben Jones',
+    author_email='jpmens()gmail.com, ben.jones12()gmail.com',
+    maintainer='Christopher Arndt',
+    maintainer_email='info@chrisarndt.de',
+    url='https://github.com/jpmens/mqttwarn',
+    keywords='mqtt notification plugins data acquisition push transformation engine mosquitto',
+    packages=find_packages(),
+    include_package_data=True,
+    package_data={
         'mqttwarn': [
-          '*.ini',
+            '*.ini',
         ],
-      },
-      zip_safe=False,
-      test_suite='mqttwarn.test',
-      install_requires=requires,
-      extras_require=extras,
-      dependency_links=[
-          'https://github.com/jacobb/prowlpy/archive/master.tar.gz#egg=prowlpy'
-      ],
-      entry_points={
-          'console_scripts': [
-              'mqttwarn = mqttwarn.commands:run',
-          ],
-      },
+    },
+    zip_safe=False,
+    test_suite='mqttwarn.test',
+    install_requires=requires,
+    extras_require=extras,
+    dependency_links=[
+        'https://github.com/jacobb/prowlpy/archive/master.tar.gz#egg=prowlpy'
+    ],
+    entry_points={
+        'console_scripts': [
+            'mqttwarn = mqttwarn.commands:run',
+        ],
+    },
 )
