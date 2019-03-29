@@ -29,18 +29,13 @@ class Struct:
         self.__dict__.update(entries)
 
     def __repr__(self):
-        return '<%s>' % str("\n ".join("%s: %s" % (k, repr(v)) for (k, v) in self.__dict__.iteritems()))
+        return '<Struct:\n%s>' % "\t\n".join("%s: %r" % kv for kv in six.iteritems(self.__dict__))
+
     def get(self, key, default=None):
-        if key in self.__dict__ and self.__dict__[key] is not None:
-            return self.__dict__[key]
-        else:
-            return default
+        return self.__dict__.get(key, default)
 
     def enum(self):
-        item = {}
-        for (k, v) in self.__dict__.iteritems():
-            item[k] = v
-        return item
+        return {k: v for k, v in six.iteritems(self.__dict__)}
 
 
 class Formatter(string.Formatter):
