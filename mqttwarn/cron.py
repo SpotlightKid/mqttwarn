@@ -50,7 +50,7 @@ class PeriodicThread(object):
         """
         try:
             self.run()
-        except Exception, e:
+        except Exception as e:
             logger.exception("Exception in running periodic thread")
         finally:
             with self.schedule_lock:

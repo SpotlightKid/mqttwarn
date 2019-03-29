@@ -58,7 +58,7 @@ class RuntimeContext(object):
             filterfunc = sanitize_function_name( self.config.get(section, 'filter') )
             try:
                 return self.invoker.filter(filterfunc, topic, payload, section)
-            except Exception, e:
+            except Exception as e:
                 logger.warn("Cannot invoke filter function %s defined in %s: %s" % (filterfunc, section, str(e)))
         return False
 
@@ -67,7 +67,7 @@ class RuntimeContext(object):
             name = sanitize_function_name(self.config.get(section, 'datamap'))
             try:
                 return self.invoker.datamap(name, topic)
-            except Exception, e:
+            except Exception as e:
                 logger.warn("Cannot invoke datamap function %s defined in %s: %s" % (name, section, str(e)))
         return None
 
@@ -76,7 +76,7 @@ class RuntimeContext(object):
             name = sanitize_function_name(self.config.get(section, 'alldata'))
             try:
                 return self.invoker.alldata(name, topic, data)
-            except Exception, e:
+            except Exception as e:
                 logger.warn("Cannot invoke alldata function %s defined in %s: %s" % (name, section, str(e)))
         return None
 

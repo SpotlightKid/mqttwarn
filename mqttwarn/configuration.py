@@ -4,13 +4,18 @@ import sys
 import ast
 import codecs
 import logging
-from ConfigParser import RawConfigParser, NoOptionError
+
+try:
+    from configparser import RawConfigParser, NoOptionError
+except ImportError:
+    from ConfigParser import RawConfigParser, NoOptionError
 
 HAVE_TLS = True
 try:
     import ssl
 except ImportError:
     HAVE_TLS = False
+
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +124,7 @@ class Config(RawConfigParser):
         try:
             val = self.get(section, key)
             val = [s.strip() for s in val.split(',')]
-        except Exception, e:
+        except Exception as e:
             logger.warn("Expecting a list in section `%s', key `%s' (%s)" % (section, key, str(e)))
 
         return val
