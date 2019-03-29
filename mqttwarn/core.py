@@ -551,7 +551,8 @@ def connect():
     load_services(services)
 
     # Initialize MQTT broker connection
-    mqttc = paho.Client(cf.clientid, clean_session=cf.cleansession, protocol=cf.protocol)
+    mqttc = paho.Client(cf.clientid, clean_session=cf.cleansession, protocol=cf.protocol,
+                        transport=cf.transport)
 
     logger.debug("Attempting connection to MQTT broker %s:%d..." % (cf.hostname, int(cf.port)))
     mqttc.on_connect = on_connect

@@ -40,6 +40,7 @@ class Config(RawConfigParser):
         ''' set defaults '''
         self.hostname     = 'localhost'
         self.port         = 1883
+        self.transport    = 'tcp'
         self.username     = None
         self.password     = None
         self.clientid     = None
