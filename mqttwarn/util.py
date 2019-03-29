@@ -2,11 +2,14 @@
 # (c) 2014-2019 The mqttwarn developers
 
 import imp
-import sys
 import json
-import string
-import traceback
+import os
 import pkg_resources
+import re
+import string
+import sys
+import traceback
+
 from six import StringIO
 
 try:
@@ -135,15 +138,12 @@ def sanitize_function_name(s):
 
 
 # http://code.davidjanes.com/blog/2008/11/27/how-to-dynamically-load-python-code/
-def load_module(path):
-    try:
-        fp = open(path, 'rb')
-        return imp.load_source(md(path).hexdigest(), path, fp)
-    finally:
-        try:
-            fp.close()
-        except:
-            pass
+def load_module(path, encoding=None):
+    if not encoding:
+        encoding = sys.getfilesystemencoding()
+
+    with open(path, 'rb') as fp:
+        return imp.load_source(md(path.encode(encoding)).hexdigest(), path, fp)
 
 
 def load_function(name=None, filepath=None):
@@ -166,9 +166,9 @@ def load_function(name=None, filepath=None):
     return mod_inst
 
 
-def get_resource_content(package, filename):
+def get_resource_content(package, filename, encoding='utf-8'):
     with pkg_resources.resource_stream(package, filename) as stream:
-        return stream.read()
+        return stream.read().decode(encoding)
 
 
 def exception_traceback(exc_info=None):
