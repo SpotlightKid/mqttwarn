@@ -20,12 +20,14 @@ except ImportError:
 
 
 class Struct:
-    """
-    Convert Python dict to object?
+    """Convert Python dict to object.
+
     http://stackoverflow.com/questions/1305532/
+
     """
     def __init__(self, **entries):
         self.__dict__.update(entries)
+
     def __repr__(self):
         return '<%s>' % str("\n ".join("%s: %s" % (k, repr(v)) for (k, v) in self.__dict__.iteritems()))
     def get(self, key, default=None):
@@ -103,6 +105,7 @@ def parse_cron_options(argstring):
 # http://code.activestate.com/recipes/473878-timeout-function-using-threading/
 def timeout(func, args=(), kwargs={}, timeout_secs=10, default=False):
     import threading
+
     class InterruptableThread(threading.Thread):
         def __init__(self):
             threading.Thread.__init__(self)
