@@ -19,7 +19,6 @@ class RuntimeContext(object):
     transformation machinery.
 
     """
-
     config = attr.ib()
     invoker = attr.ib()
 
@@ -127,7 +126,6 @@ class FunctionInvoker(object):
     Python source code file.
 
     """
-
     config = attr.ib()
     srv = attr.ib()
 
@@ -140,6 +138,7 @@ class FunctionInvoker(object):
 
         """
         func = load_function(name=name, filepath=self.config.functions)
+
         try:
             val = func(topic, self.srv)  # new version
         except TypeError:
@@ -186,6 +185,7 @@ class FunctionInvoker(object):
 
         """
         func = load_function(name=name, filepath=self.config.functions)
+
         try:
             # new version
             rc = func(topic, payload, section, self.srv)

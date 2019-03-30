@@ -8,6 +8,7 @@ notification services after optionally applying sophisticated transformations.
 import sys
 from setuptools import setup, find_packages
 
+
 requires = [
     'six>=1.11.0',
     'paho-mqtt>=1.3',

@@ -72,7 +72,6 @@ service_plugins = {}
 # and its global instantiation
 class Service(object):
     def __init__(self, mqttc, logger):
-
         # Reference to MQTT client object
         self.mqttc = mqttc
 
@@ -161,7 +160,6 @@ def on_connect(mosq, userdata, flags, result_code):
 
         if cf.lwt is not None:
             mqttc.publish(cf.lwt, LWTALIVE, qos=0, retain=True)
-
     elif result_code == 1:
         logger.info("Connection refused - unacceptable protocol version")
     elif result_code == 2:
@@ -276,6 +274,7 @@ def send_to_targets(section, topic, payload):
             return
     else:
         targetlist = cf.getlist(section, 'targets')
+
         if not isinstance(targetlist, list):
             # if targets is neither dict nor list
             logger.error("Target definition in section [%s] is incorrect", section)
@@ -360,6 +359,7 @@ def xform(function, orig_value, transform_data):
 
     if function is not None:
         function_name = sanitize_function_name(function)
+
         if function_name is not None:
             try:
                 return cf.datamap(function_name, transform_data)
@@ -479,9 +479,11 @@ def processor(worker_id=None):
 
         if HAVE_JINJA:
             template = conf(section, 'template')
+
             if template is not None:
                 try:
                     text = render_template(template, transform_data)
+
                     if text is not None:
                         item['message'] = text
                 except Exception as exc:
