@@ -87,14 +87,15 @@ class Service(object):
 
 
 def make_service(mqttc=None, name=None):
-    """
-    Service object factory.
+    """Service object factory.
+
     Prepare service object for plugin.
     Inject appropriate MQTT client and logger objects.
 
     :param mqttc: Instance of PAHO MQTT client object.
     :param name:  Name used for obtaining a logger instance.
     :return:      Service object ready for being passed to plugin instance.
+
     """
     name = name or 'unknown'
     logger = logging.getLogger(name)
@@ -128,18 +129,19 @@ def render_template(filename, data):
 
 # MQTT broker callbacks
 def on_connect(mosq, userdata, flags, result_code):
-    """
-    Handle connections (or failures) to the broker.
+    """Handle connections (or failures) to the broker.
+
     This is called after the client has received a CONNACK message
     from the broker in response to calling connect().
 
-    The result_code is one of;
+    The result_code is one of:
     0: Success
     1: Refused - unacceptable protocol version
     2: Refused - identifier rejected
     3: Refused - server unavailable
     4: Refused - bad user name or password (MQTT v3.1 broker only)
     5: Refused - not authorised (MQTT v3.1 broker only)
+
     """
     if result_code == 0:
         logger.debug("Connected to MQTT broker, subscribing to topics...")
@@ -177,9 +179,7 @@ def on_connect(mosq, userdata, flags, result_code):
 
 
 def on_disconnect(mosq, userdata, result_code):
-    """
-    Handle disconnections from the broker
-    """
+    """Handle disconnections from the broker."""
     if result_code == 0:
         logger.info("Clean disconnection from broker")
     else:
@@ -189,9 +189,7 @@ def on_disconnect(mosq, userdata, result_code):
 
 
 def on_message(mosq, userdata, msg):
-    """
-    Message received from the broker
-    """
+    """Handle message received from the broker."""
     logger.debug("Message received on %s: %r", msg.topic, msg.payload)
     topic = msg.topic
 
@@ -332,9 +330,7 @@ def send_to_targets(section, topic, payload):
 
 
 def builtin_transform_data(topic, payload):
-    ''' Return a dict with initial transformation data which is made
-        available to all plugins '''
-
+    """Return a dict with standard transformation data available to all plugins."""
     dt = datetime.now()
     return {
         'topic': topic,
@@ -353,11 +349,12 @@ def builtin_transform_data(topic, payload):
 
 
 def xform(function, orig_value, transform_data):
-    ''' Attempt transformation on orig_value.
-        1st. function()
-        2nd. inline {xxxx}
-        '''
+    """Attempt transformation on orig_value.
 
+    1st. function()
+    2nd. inline {xxxx}
+
+    """
     if orig_value is None:
         return None
 
@@ -384,10 +381,7 @@ def xform(function, orig_value, transform_data):
 
 
 def decode_payload(section, topic, payload):
-    """
-    Decode message payload through transformation machinery.
-    """
-
+    """Decode message payload through transformation machinery."""
     transform_data = builtin_transform_data(topic, payload)
     topic_data = context.get_topic_data(section, topic)
 
@@ -421,11 +415,12 @@ def decode_payload(section, topic, payload):
 
 
 def processor(worker_id=None):
-    """
-    Queue runner. Pull a job from the queue, find the module in charge
-    of handling the service, and invoke the module's plugin to do so.
-    """
+    """Queue runner.
 
+    Pull a job from the queue, find the module in charge
+    of handling the service, and invoke the module's plugin to do so.
+
+    """
     conf = context.get_config
 
     while not exit_flag:
@@ -541,10 +536,7 @@ def load_services(services):
 
 
 def connect():
-    """
-    Load service plugins, connect to the broker, launch daemon threads and listen forever
-    """
-
+    """Load service plugins, connect to the broker, launch daemon threads and listen forever."""
     # FIXME: Remove global variables
     global mqttc
 
@@ -639,10 +631,7 @@ def connect():
 
 
 def cleanup(signum=None, frame=None):
-    """
-    Signal handler to ensure we disconnect cleanly
-    in the event of a SIGTERM or SIGINT.
-    """
+    """Signal handler to ensure we disconnect cleanly in the event of a SIGTERM or SIGINT."""
     for ptname in ptlist:
         logger.debug("Cancel %s timer", ptname)
         ptlist[ptname].cancel()
@@ -676,9 +665,7 @@ def bootstrap(config=None, scriptname=None):
 
 
 def run_plugin(config=None, name=None, data=None):
-    """
-    Run service plugins directly without the
-    dispatching and transformation machinery.
+    """Run service plugins directly without the dispatching and transformation machinery.
 
     On the one hand, this might look like a bit of a hack.
     On the other hand, it shows very clearly how some of
@@ -688,8 +675,8 @@ def run_plugin(config=None, name=None, data=None):
     :param config: The configuration object
     :param name:   The name of the service plugin, e.g. "log" or "file"
     :param data:   The data to be converged into an appropriate item Struct object instance
-    """
 
+    """
     # Bootstrap mqttwarn core
     bootstrap(config=config)
 

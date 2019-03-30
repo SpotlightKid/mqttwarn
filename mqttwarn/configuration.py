@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 # (c) 2014-2019 The mqttwarn developers
+
 import sys
 import ast
-import codecs
 import logging
+
+from io import open
 
 try:
     from configparser import RawConfigParser, NoOptionError
@@ -21,54 +23,64 @@ logger = logging.getLogger(__name__)
 
 
 class Config(RawConfigParser):
+    """RawConfigParser wrapper providing defaults and custom config value access methods."""
 
     specials = {
-            'TRUE'  : True,
-            'FALSE' : False,
-            'NONE'  : None,
-        }
+        'TRUE': True,
+        'FALSE': False,
+        'NONE': None,
+    }
+
+    loglevels = {
+        'CRITICAL': 50,
+        'DEBUG': 10,
+        'ERROR': 40,
+        'FATAL': 50,
+        'INFO': 20,
+        'NOTSET': 0,
+        'WARN': 30,
+        'WARNING': 30,
+    }
 
     def __init__(self, configuration_file, defaults=None):
-
         defaults = defaults or {}
+        super(Config, self).__init__()
 
-        RawConfigParser.__init__(self)
-        f = codecs.open(configuration_file, 'r', encoding='utf-8')
-        self.readfp(f)
-        f.close()
+        with open(configuration_file, 'r', encoding='utf-8') as fp:
+            self.readfp(fp)
 
-        ''' set defaults '''
-        self.hostname     = 'localhost'
-        self.port         = 1883
-        self.transport    = 'tcp'
-        self.username     = None
-        self.password     = None
-        self.clientid     = None
-        self.lwt          = None
+        # Set defaults
+        self.hostname = 'localhost'
+        self.port = 1883
+        self.transport = 'tcp'
+        self.username = None
+        self.password = None
+        self.clientid = None
+        self.lwt = None
         self.skipretained = False
         self.cleansession = False
-        self.protocol     = 3
+        self.protocol = 3
 
-        self.logformat    = '%(asctime)-15s %(levelname)-8s [%(name)-25s] %(message)s'
-        self.logfile      = None
-        self.loglevel     = 'DEBUG'
+        self.logformat = '%(asctime)-15s %(levelname)-8s [%(name)-25s] %(message)s'
+        self.logfile = None
+        self.loglevel = 'DEBUG'
 
-        self.functions    = None
-        self.num_workers  = 1
+        self.functions = None
+        self.num_workers = 1
 
-        self.directory    = '.'
-        self.ca_certs     = None
-        self.tls_version  = None
-        self.certfile     = None
-        self.keyfile      = None
+        self.directory = '.'
+        self.ca_certs = None
+        self.tls_version = None
+        self.certfile = None
+        self.keyfile = None
         self.tls_insecure = False
-        self.tls          = False
+        self.tls = False
 
         self.__dict__.update(defaults)
         self.__dict__.update(self.config('defaults'))
 
-        if HAVE_TLS == False:
-            logger.error("TLS parameters set but no TLS available (SSL)")
+        if not HAVE_TLS:
+            logger.error("TLS (SSL) parameters set but no ssl module TLS.")
             sys.exit(2)
 
         if self.ca_certs is not None:
@@ -87,75 +99,65 @@ class Config(RawConfigParser):
         self.loglevelnumber = self.level2number(self.loglevel)
 
     def level2number(self, level):
-
-        levels = {
-            'CRITICAL' : 50,
-            'DEBUG' : 10,
-            'ERROR' : 40,
-            'FATAL' : 50,
-            'INFO' : 20,
-            'NOTSET' : 0,
-            'WARN' : 30,
-            'WARNING' : 30,
-        }
-
-        return levels.get(level.upper(), levels['DEBUG'])
-
+        return self.loglevels.get(level.upper(), self.loglevels['DEBUG'])
 
     def g(self, section, key, default=None):
         try:
             val = self.get(section, key)
-            if val.upper() in self.specials:
-                return self.specials[val.upper()]
-            return ast.literal_eval(val)
         except NoOptionError:
             return default
-        except ValueError:   # e.g. %(xxx)s in string
+
+        try:
+            if val.upper() in self.specials:
+                return self.specials[val.upper()]
+
+            return ast.literal_eval(val)
+        except ValueError:
+            # e.g. %(xxx)s in string
             return val
-        except SyntaxError:  # If not python value, e.g. list of targets coma separated
-            return val
-        except:
-            raise
+        except SyntaxError:
+            # If not a valid Python literal, e.g. list of targets comma-separated
             return val
 
     def getlist(self, section, key):
-        ''' Return a list, fail if it isn't a list '''
-
-        val = None
+        """Return a list, return None if key is not present in section."""
         try:
             val = self.get(section, key)
-            val = [s.strip() for s in val.split(',')]
-        except Exception as e:
-            logger.warn("Expecting a list in section `%s', key `%s' (%s)" % (section, key, str(e)))
-
-        return val
+            return [s.strip() for s in val.split(',')]
+        except Exception as exc:
+            logger.warn("Expecting a list in section '%s', key '%s': %s", section, key, exc)
+            return None
 
     def getdict(self, section, key):
-        val = self.g(section, key)
-
         try:
+            val = self.g(section, key)
             return dict(val)
-        except:
+        except Exception as exc:
+            logger.warn("Expecting a dict in section '%s', key '%s': %s", section, key, exc)
             return None
 
     def config(self, section):
-        ''' Convert a whole section's options (except the options specified
-            explicitly below) into a dict, turning
+        """Convert a whole section's options into a dict.
 
-                [config:mqtt]
-                host = 'localhost'
-                username = None
-                list = [1, 'aaa', 'bbb', 4]
+        E.g. turns::
 
-            into
+            [config:mqtt]
+            host = 'localhost'
+            username = None
+            list = [1, 'aaa', 'bbb', 4]
 
-                {u'username': None, u'host': 'localhost', u'list': [1, 'aaa', 'bbb', 4]}
+        into::
 
-            Cannot use config.items() because I want each value to be
-            retrieved with g() as above '''
+            {u'username': None, u'host': 'localhost', u'list': [1, 'aaa', 'bbb', 4]}
 
-        d = None
+        Ẃe cannot use ``config.items()`` because we want each value to be retrieved with method
+        ``g()`` defined above.
+
+        Options named 'targets' and 'module' are excluded from the returned dict.
+
+        If the given section does not exist, returns None.
+
+        """
         if self.has_section(section):
-            d = dict((key, self.g(section, key))
-                for (key) in self.options(section) if key not in ['targets', 'module'])
-        return d
+            return {key: self.g(section, key)
+                    for key in self.options(section) if key not in ('targets', 'module')}

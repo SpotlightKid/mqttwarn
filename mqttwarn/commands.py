@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # (c) 2014-2019 The mqttwarn developers
+
 import os
 import sys
 import json
@@ -8,14 +9,16 @@ import logging
 
 from docopt import docopt
 
-from mqttwarn import __version__
-from mqttwarn.configuration import Config
-from mqttwarn.core import bootstrap, connect, cleanup, run_plugin
-from mqttwarn.util import get_resource_content
+from . import __version__
+from .configuration import Config
+from .core import bootstrap, connect, cleanup, run_plugin
+from .util import get_resource_content
+
 
 logger = logging.getLogger(__name__)
 
 APP_NAME = 'mqttwarn'
+
 
 def run():
     """
@@ -35,13 +38,11 @@ def run():
       -h --help                 Show this screen
 
     """
-
     # Use generic commandline options schema and amend with current program name
     commandline_schema = run.__doc__.format(program=APP_NAME)
 
     # Read commandline options
     options = docopt(commandline_schema, version=APP_NAME + ' ' + __version__)
-
 
     if options['make-config']:
         payload = get_resource_content('mqttwarn.examples', 'basic/mqttwarn.ini')
@@ -52,14 +53,12 @@ def run():
         print(payload)
 
     elif options['--plugin'] and options['--data']:
-
         # Decode arguments
         plugin = options['--plugin']
         data = json.loads(options['--data'])
 
         # Launch service plugin in standalone mode
         launch_plugin_standalone(plugin, data)
-
 
     # Run mqttwarn in service mode when no command line arguments are given
     else:
@@ -73,14 +72,13 @@ def launch_plugin_standalone(plugin, data):
 
     # Setup logging
     setup_logging(config)
-    logger.info('Running service plugin "{}" with data "{}"'.format(plugin, data))
+    logger.info("Running service plugin '%s' with data '%s'.", plugin, data)
 
     # Launch service plugin
     run_plugin(config=config, name=plugin, data=data)
 
 
 def run_mqttwarn():
-
     # Script name (without extension) used as last resort fallback for config/logfile names
     scriptname = os.path.splitext(os.path.basename(sys.argv[0]))[0]
 
@@ -89,8 +87,8 @@ def run_mqttwarn():
 
     # Setup logging
     setup_logging(config)
-    logger.info("Starting {}".format(scriptname))
-    logger.info("Log level is %s" % logging.getLevelName(logger.getEffectiveLevel()))
+    logger.info("Starting %s", scriptname)
+    logger.info("Log level is %s", logging.getLevelName(logger.getEffectiveLevel()))
 
     # Handle signals
     signal.signal(signal.SIGTERM, cleanup)

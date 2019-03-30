@@ -39,33 +39,42 @@ class Struct:
 
 
 class Formatter(string.Formatter):
-    """
-    A custom string formatter. See also:
+    """A custom string formatter.
+
+    See also:
+
     - https://docs.python.org/2/library/string.html#format-string-syntax
     - https://docs.python.org/2/library/string.html#custom-string-formatting
+
     """
 
     def convert_field(self, value, conversion):
-        """
+        """Convert format string placeholder value according to conversion field.
+
         The conversion field causes a type coercion before formatting.
         By default, two conversion flags are supported: '!s' which calls
         str() on the value, and '!r' which calls repr().
 
-        This also adds the '!j' conversion flag, which serializes the
-        value to JSON format.
+        This also adds the '!j' conversion flag, which serializes the value to
+        JSON format.
 
         See also https://github.com/jpmens/mqttwarn/issues/146.
+
         """
         if conversion == 'j':
             value = json.dumps(value)
+
         return value
 
 
 def asbool(obj):
-    """
+    """Convert given object into a boolen value.
+
     Shamelessly stolen from beaker.converters
-    # (c) 2005 Ian Bicking and contributors; written for Paste (http://pythonpaste.org)
-    # Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+
+    (c) 2005 Ian Bicking and contributors; written for Paste (http://pythonpaste.org)
+    Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+
     """
     if isinstance(obj, six.string_types):
         obj = obj.strip().lower()
@@ -80,8 +89,8 @@ def asbool(obj):
 
 
 def parse_cron_options(argstring):
-    """
-    Parse periodic task options.
+    """Parse periodic task options.
+
     Obtains configuration value, returns dictionary.
 
     Example::
@@ -97,6 +106,7 @@ def parse_cron_options(argstring):
     return options
 
 
+# FIXME: does not work, functions hangs until thread exits
 # http://code.activestate.com/recipes/473878-timeout-function-using-threading/
 def timeout(func, args=(), kwargs={}, timeout_secs=10, default=False):
     import threading
@@ -109,7 +119,7 @@ def timeout(func, args=(), kwargs={}, timeout_secs=10, default=False):
         def run(self):
             try:
                 self.result = func(*args, **kwargs)
-            except:
+            except:  # noqa:F722
                 self.result = default
 
     it = InterruptableThread()
