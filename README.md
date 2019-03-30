@@ -17,7 +17,7 @@ in progress. `mqttrun` itself can be installed and run with Python 3, but
 not all services are compatible yet.*
 
 *This is an unoffical fork. Inquiries regarding its status and features
-should be only directed to the the owner of this repository, not to the
+should only be directed to the owner of this repository, not to the
 original authors.*
 
 _mqttwarn_ supports a number of services (listed alphabetically below):
