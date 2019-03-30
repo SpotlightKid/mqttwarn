@@ -440,8 +440,8 @@ def processor(worker_id=None):
             service_targets = context.get_service_targets(service)
 
             if target not in service_targets:
-                raise KeyError("Invalid configuration: topic {topic} points to non-existing "
-                               "target {} in service {}".format(target, service))
+                raise KeyError("Invalid configuration: topic {} points to non-existing "
+                               "target {} in service {}".format(topic, target, service))
 
         except Exception as exc:
             logger.exception("Cannot handle service=%s, target=%s: %s", service, target, exc)
