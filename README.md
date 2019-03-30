@@ -4,9 +4,21 @@ To _warn_, _alert_, or _notify_.
 
 ![Definition by Google](assets/google-definition.jpg)
 
-This program subscribes to any number of MQTT topics (which may include wildcards) and publishes received payloads to one or more notification services, including support for notifying more than one distinct service for the same message.
+This program subscribes to any number of MQTT topics (which may include
+wildcards) and publishes received payloads to one or more notification
+services, including support for notifying more than one distinct service
+for the same message.
 
-For example, you may wish to notify via e-mail and to Pushover of an alarm published as text to the MQTT topic `home/monitoring/+`.
+For example, you may wish to notify via e-mail and to Pushover of an
+alarm published as text to the MQTT topic `home/monitoring/+`.
+
+**Note:** *This fork aims to add support for Python 3. This is still work
+in progress. `mqttrun` itself can be installed and run with Python 3, but
+not all services are compatible yet.*
+
+*This is an unoffical fork. Inquiries regarding its status and features
+should be only directed to the the owner of this repository, not to the
+original authors.*
 
 _mqttwarn_ supports a number of services (listed alphabetically below):
 
@@ -2358,7 +2370,7 @@ are supported.
 targets = {
         # targetid        : [ 'wsuri']
         'wssserver' : [ 'ws://localhost/ws' ],
-} 
+}
 ```
 
 Requires:
