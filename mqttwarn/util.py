@@ -136,6 +136,7 @@ def sanitize_function_name(s):
 
     if s is not None:
         valid = re.match(r'^[\w]+\(\)', s)
+
         if valid:
             func = re.sub('[()]', '', s)
 
@@ -151,24 +152,18 @@ def load_module(path, encoding=None):
         return imp.load_source(md(path.encode(encoding)).hexdigest(), path, fp)
 
 
-def load_function(name=None, filepath=None):
-    mod_inst = None
-
-    assert name, 'Function name must be given'
-    assert filepath, 'Path to file must be given'
+def load_function(name, filepath):
+    assert name, 'Function name must not be empty or None'
+    assert filepath, 'Path to module file must not be empty or None'
 
     mod_name, file_ext = os.path.splitext(os.path.split(filepath)[-1])
 
     if file_ext.lower() == '.py':
         py_mod = imp.load_source(mod_name, filepath)
-
     elif file_ext.lower() == '.pyc':
         py_mod = imp.load_compiled(mod_name, filepath)
 
-    if hasattr(py_mod, name):
-        mod_inst = getattr(py_mod, name)
-
-    return mod_inst
+    return getattr(py_mod, name, None)
 
 
 def get_resource_content(package, filename, encoding='utf-8'):
