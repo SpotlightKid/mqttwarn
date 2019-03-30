@@ -150,7 +150,7 @@ class Config(RawConfigParser):
 
         into::
 
-            {u'username': None, u'host': 'localhost', u'list': [1, 'aaa', 'bbb', 4]}
+            {'username': None, 'host': 'localhost', 'list': [1, 'aaa', 'bbb', 4]}
 
         Ẃe cannot use ``config.items()`` because we want each value to be retrieved with method
         ``g()`` defined above.
