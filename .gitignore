@@ -7,3 +7,7 @@
 *.sln
 *.suo
 *.pyproj
+
+mqttwarn.log
+mqttwarn.ini
+samplefuncs.py
