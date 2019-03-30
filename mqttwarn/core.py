@@ -10,25 +10,6 @@ import time
 from datetime import datetime
 from pkg_resources import resource_filename
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
-try:
-    import queue
-except ImportError:
-    import Queue as Queue
-
-HAVE_JINJA = True
-try:
-    from jinja2 import Environment, FileSystemLoader
-except ImportError:
-    HAVE_JINJA = False
-else:
-    jenv = Environment(loader = FileSystemLoader('templates/', encoding='utf-8'), trim_blocks=True)
-    jenv.filters['jsonify'] = json.dumps
-
 import paho.mqtt.client as paho
 import six
 
@@ -37,13 +18,31 @@ from .cron import PeriodicThread
 from .util import (load_function, load_module, timeout, parse_cron_options, sanitize_function_name,
                    Struct, Formatter, asbool)
 
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
+try:
+    import queue
+except ImportError:
+    import Queue as queue
+
+HAVE_JINJA = True
+try:
+    from jinja2 import Environment, FileSystemLoader
+except ImportError:
+    HAVE_JINJA = False
+else:
+    jenv = Environment(loader=FileSystemLoader('templates/', encoding='utf-8'), trim_blocks=True)
+    jenv.filters['jsonify'] = json.dumps
+
 
 logger = logging.getLogger(__name__)
 
 # lwt values - may make these configurable later?
-LWTALIVE   = "1"
-LWTDEAD    = "0"
-
+LWTALIVE = "1"
+LWTDEAD = "0"
 
 # Name of calling program
 SCRIPTNAME = 'mqttwarn'
@@ -75,13 +74,13 @@ class Service(object):
     def __init__(self, mqttc, logger):
 
         # Reference to MQTT client object
-        self.mqttc    = mqttc
+        self.mqttc = mqttc
 
         # Reference to all mqttwarn globals, for using its machinery from plugins
-        self.mwcore   = globals()
+        self.mwcore = globals()
 
         # Reference to logging object
-        self.logging  = logger
+        self.logging = logger
 
         # Name of self ("mqttwarn", mostly)
         self.SCRIPTNAME = SCRIPTNAME
@@ -105,16 +104,14 @@ def make_service(mqttc=None, name=None):
 
 class Job(object):
     def __init__(self, prio, service, section, topic, payload, data, target):
-        self.prio       = prio
-        self.service    = service
-        self.section    = section
-        self.topic      = topic
-        self.payload    = payload       # raw payload
-        self.data       = data          # decoded payload
-        self.target     = target
-
-        logger.debug("New `%s:%s' job: %s" % (service, target, topic))
-        return
+        self.prio = prio
+        self.service = service
+        self.section = section
+        self.topic = topic
+        self.payload = payload  # raw payload
+        self.data = data        # decoded payload
+        self.target = target
+        logger.debug("New `%s:%s' job: %s", service, target, topic)
 
     def __cmp__(self, other):
         return ((self.prio > other.prio) - (self.prio < other.prio))
@@ -147,7 +144,8 @@ def on_connect(mosq, userdata, flags, result_code):
     if result_code == 0:
         logger.debug("Connected to MQTT broker, subscribing to topics...")
         if not cf.cleansession:
-            logger.debug("Cleansession==False; previous subscriptions for clientid %s remain active on broker" % cf.clientid)
+            logger.debug("Cleansession==False; previous subscriptions for clientid %s remain "
+                         "active on broker", cf.clientid)
 
         subscribed = []
         for section in context.get_sections():
@@ -157,7 +155,7 @@ def on_connect(mosq, userdata, flags, result_code):
             if topic in subscribed:
                 continue
 
-            logger.debug("Subscribing to %s (qos=%d)" % (topic, qos))
+            logger.debug("Subscribing to %s (qos=%d)", topic, qos)
             mqttc.subscribe(topic, qos)
             subscribed.append(topic)
 
@@ -175,7 +173,7 @@ def on_connect(mosq, userdata, flags, result_code):
     elif result_code == 5:
         logger.info("Connection refused - not authorised")
     else:
-        logger.warning("Connection failed - result code %d" % (result_code))
+        logger.warning("Connection failed - result code %d", result_code)
 
 
 def on_disconnect(mosq, userdata, result_code):
@@ -185,7 +183,8 @@ def on_disconnect(mosq, userdata, result_code):
     if result_code == 0:
         logger.info("Clean disconnection from broker")
     else:
-        send_failover("brokerdisconnected", "Broker connection lost. Will attempt to reconnect in 5s...")
+        send_failover("brokerdisconnected",
+                      "Broker connection lost. Will attempt to reconnect in 5s...")
         time.sleep(5)
 
 
@@ -203,7 +202,7 @@ def on_message(mosq, userdata, msg):
 
     if msg.retain == 1:
         if cf.skipretained:
-            logger.debug("Skipping retained message on %s" % topic)
+            logger.debug("Skipping retained message on %s", topic)
             return
 
     # Try to find matching settings for this topic
@@ -211,13 +210,16 @@ def on_message(mosq, userdata, msg):
         # Get the topic for this section (usually the section name but optionally overridden)
         match_topic = context.get_topic(section)
         if paho.topic_matches_sub(match_topic, topic):
-            logger.debug("Section [%s] matches message on %s. Processing..." % (section, topic))
+            logger.debug("Section [%s] matches message on %s. Processing...", section, topic)
+
             # Check for any message filters
             if context.is_filtered(section, topic, payload):
-                logger.debug("Filter in section [%s] has skipped message on %s" % (section, topic))
+                logger.debug("Filter in section [%s] has skipped message on %s", section, topic)
                 continue
+
             # Send the message to any targets specified
             send_to_targets(section, topic, payload)
+
 # End of MQTT broker callbacks
 
 
@@ -229,11 +231,12 @@ def send_failover(reason, message):
 
 
 def send_to_targets(section, topic, payload):
-    if cf.has_section(section) == False:
-        logger.warn("Section [%s] does not exist in your INI file, skipping message on %s" % (section, topic))
+    if not cf.has_section(section):
+        logger.warn("Section [%s] does not exist in your INI file, skipping message on %s",
+                    section, topic)
         return
 
-    # decode raw payload into transformation data
+    # Decode raw payload into transformation data
     data = decode_payload(section, topic, payload)
 
     dispatcher_dict = cf.getdict(section, 'targets')
@@ -249,70 +252,72 @@ def send_to_targets(section, topic, payload):
 
     elif isinstance(dispatcher_dict, dict):
         def get_key(item):
-            # precede a key with the number of topic levels and then use reverse alphabetic sort order
+            # Prefix a key with the number of topic levels and then use reverse alphabetic ordering
             # '+' is after '#' in ascii table
-            # caveat: for instance space is allowed in topic name but will be less specific than '+', '#'
+            # Caveat: space is allowed in topic name but will be less specific than '+', '#'
             # so replace '#' with first ascii character and '+' with second ascii character
             # http://public.dhe.ibm.com/software/dw/webservices/ws-mqtt/mqtt-v3r1.html#appendix-a
 
-            # item[0] represents topic. replace wildcard characters to ensure the right order
+            # item[0] represents topic. Replace wildcard characters to ensure the right order
             modified_topic = item[0].replace('#', chr(0x01)).replace('+', chr(0x02))
             levels = len(item[0].split('/'))
-            # concatenate levels with leading zeros and modified topic and return as a key
+            # Concatenate levels with leading zeros and modified topic and return as a key
             return "{:03d}{}".format(levels, modified_topic)
 
-        # produce a sorted list of topic/targets with longest and more specific first
+        # Produce a sorted list of topic/targets with longest and more specific first
         sorted_dispatcher = sorted(dispatcher_dict.items(), key=get_key, reverse=True)
         for match_topic, targets in sorted_dispatcher:
             if paho.topic_matches_sub(match_topic, topic):
                 # hocus pocus, let targets become a list
                 targetlist = targets if isinstance(targets, list) else [targets]
-                logger.debug("Most specific match %s dispatched to %s" % (match_topic, targets))
+                logger.debug("Most specific match %s dispatched to %s", match_topic, targets)
                 # first most specific topic matches then stops processing
                 break
         else:
             # Not found then no action. This could be configured intentionally.
-            logger.debug("Dispatcher definition does not contain matching topic/target pair in section [%s]" % section)
+            logger.debug("Dispatcher definition does not contain matching topic/target pair in "
+                         "section [%s]", section)
             return
     else:
         targetlist = cf.getlist(section, 'targets')
         if not isinstance(targetlist, list):
             # if targets is neither dict nor list
-            logger.error("Target definition in section [%s] is incorrect" % section)
+            logger.error("Target definition in section [%s] is incorrect", section)
             cleanup(0)
             return
 
-    # interpolate transformation data values into topic targets
+    # Interpolate transformation data values into topic targets
     # be graceful if interpolation fails, but log a meaningful message
     targetlist_resolved = []
     for target in targetlist:
         try:
             target = target.format(**data)
             targetlist_resolved.append(target)
-        except Exception as ex:
-            error = repr(ex)
-            logger.error('Cannot interpolate transformation data into topic target "{target}": {error}. ' \
-                          'section={section}, topic={topic}, payload={payload}, data={data}'.format(**locals()))
+        except Exception as exc:
+            logger.exception('Cannot interpolate transformation data into topic target "%s": %s. '
+                             'section=%s, topic=%s, payload=%s, data=%s', target, exc, section,
+                             topic, payload, data)
+
     targetlist = targetlist_resolved
 
-    for t in targetlist:
-        logger.debug("Message on %s going to %s" % (topic, t))
+    for service in targetlist:
+        logger.debug("Message on %s going to %s", topic, service)
         # Each target is either "service" or "service:target"
         # If no target specified then notify ALL targets
-        service = t
         target = None
 
         # Check if this is for a specific target
-        if t.find(':') != -1:
+        if ':' in service:
             try:
-                service, target = t.split(':', 2)
-            except:
-                logger.warn("Invalid target %s - should be 'service:target'" % (t))
+                service, target = service.split(':', 2)
+            except (TypeError, ValueError):
+                logger.warn("Invalid target %s - should be 'service:target'", service)
                 continue
 
         # skip targets with invalid services
-        if not service in service_plugins:
-            logger.error("Invalid configuration: topic %s points to non-existing service %s" % (topic, service))
+        if service not in service_plugins:
+            logger.error("Invalid configuration: topic %s points to non-existing service %s",
+                         topic, service)
             continue
 
         sendtos = None
@@ -330,18 +335,21 @@ def builtin_transform_data(topic, payload):
     ''' Return a dict with initial transformation data which is made
         available to all plugins '''
 
-    tdata = {}
     dt = datetime.now()
-
-    tdata['topic']      = topic
-    tdata['payload']    = payload
-    tdata['_dtepoch']   = int(time.time())          # 1392628581
-    tdata['_dtiso']     = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ") # 2014-02-17T10:38:43.910691Z
-    tdata['_ltiso']     = datetime.now().isoformat() #local time in iso format
-    tdata['_dthhmm']    = dt.strftime('%H:%M')      # 10:16
-    tdata['_dthhmmss']  = dt.strftime('%H:%M:%S')   # hhmmss=10:16:21
-
-    return tdata
+    return {
+        'topic': topic,
+        'payload': payload,
+        # Unix timestamp in seconds since the epoch
+        '_dtepoch': int(time.time()),
+        # UTC timestamp, e.g. 2014-02-17T10:38:43.910691Z
+        '_dtiso': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+        # local time in iso format
+        '_ltiso': datetime.now().isoformat(),
+        # Local time in hours and minutes, e.g. 10:16
+        '_dthhmm': dt.strftime('%H:%M'),
+        # Local time in hours, minutes and seconds, e.g. 10:16:21
+        '_dthhmmss': dt.strftime('%H:%M:%S')
+    }
 
 
 def xform(function, orig_value, transform_data):
@@ -361,13 +369,13 @@ def xform(function, orig_value, transform_data):
             try:
                 res = cf.datamap(function_name, transform_data)
                 return res
-            except Exception as e:
-                logger.warn("Cannot invoke %s(): %s" % (function_name, str(e)))
+            except Exception as exc:
+                logger.warn("Cannot invoke %s(): %s", function_name, exc)
 
         try:
             res = Formatter().format(function, **transform_data).encode('utf-8')
-        except Exception as e:
-            logger.warning("Cannot format message: %s" % e)
+        except Exception as exc:
+            logger.warning("Cannot format message: %s", exc)
 
     if isinstance(res, six.string_types):
         res = res.replace("\\n", "\n")
@@ -394,6 +402,7 @@ def decode_payload(section, topic, payload):
     # longer fix the original ... (legacy)
 
     all_data = context.get_all_data(section, topic, transform_data)
+
     if all_data is not None and isinstance(all_data, dict):
         transform_data.update(all_data)
 
@@ -403,8 +412,8 @@ def decode_payload(section, topic, payload):
     try:
         payload = payload.rstrip("\0")
         payload_data = json.loads(payload)
-    except Exception as ex:
-        logger.debug("Cannot decode JSON object, payload={payload}: {ex}".format(**locals()))
+    except Exception as exc:
+        logger.debug("Cannot decode JSON object, payload=%s: %s", payload, exc)
     else:
         transform_data.update(payload_data)
 
@@ -417,28 +426,29 @@ def processor(worker_id=None):
     of handling the service, and invoke the module's plugin to do so.
     """
 
+    conf = context.get_config
+
     while not exit_flag:
-        logger.debug('Job queue has %s items to process' % q_in.qsize())
+        logger.debug('Job queue has %s items to process', q_in.qsize())
         job = q_in.get()
 
         service = job.service
         section = job.section
-        target  = job.target
-        topic   = job.topic
+        target = job.target
+        topic = job.topic
 
-        logger.debug("Processor #%s is handling: `%s' for %s" % (worker_id, service, target))
+        logger.debug("Processor #%s is handling: `%s' for %s", worker_id, service, target)
 
         # Sanity checks.
         # If service configuration or targets can not be obtained successfully,
         # log a sensible error message, fail the job and carry on with the next job.
         try:
-            service_config  = context.get_service_config(service)
+            service_config = context.get_service_config(service)
             service_targets = context.get_service_targets(service)
 
             if target not in service_targets:
-                error_message = "Invalid configuration: topic {topic} points to " \
-                                "non-existing target {target} in service {service}".format(**locals())
-                raise KeyError(error_message)
+                raise KeyError("Invalid configuration: topic {topic} points to non-existing "
+                               "target {} in service {}".format(target, service))
 
         except Exception as exc:
             logger.exception("Cannot handle service=%s, target=%s: %s", service, target, exc)
@@ -446,44 +456,43 @@ def processor(worker_id=None):
             continue
 
         item = {
-            'service'       : service,
-            'section'       : section,
-            'target'        : target,
-            'config'        : service_config,
-            'addrs'         : service_targets[target],
-            'topic'         : topic,
-            'payload'       : job.payload,
-            'data'          : None,
-            'title'         : None,
-            'image'         : None,
-            'message'       : None,
-            'priority'      : None
+            'service': service,
+            'section': section,
+            'target': target,
+            'config': service_config,
+            'addrs': service_targets[target],
+            'topic': topic,
+            'payload': job.payload,
+            'data': None,
+            'title': None,
+            'image': None,
+            'message': None,
+            'priority': None
         }
 
-
         item['data'] = transform_data = job.data.copy()
-        item['title'] = xform(context.get_config(section, 'title'), SCRIPTNAME, transform_data)
-        item['image'] = xform(context.get_config(section, 'image'), '', transform_data)
-        item['message'] = xform(context.get_config(section, 'format'), job.payload, transform_data)
+        item['title'] = xform(conf(section, 'title'), SCRIPTNAME, transform_data)
+        item['image'] = xform(conf(section, 'image'), '', transform_data)
+        item['message'] = xform(conf(section, 'format'), job.payload, transform_data)
 
         try:
-            item['priority'] = int(xform(context.get_config(section, 'priority'), 0, transform_data))
-        except Exception as e:
+            item['priority'] = int(xform(conf(section, 'priority'), 0, transform_data))
+        except Exception as exc:
             item['priority'] = 0
-            logger.warn("Failed to determine the priority, defaulting to zero: %s" % (str(e)))
+            logger.warn("Failed to determine the priority, defaulting to zero: %s", exc)
 
-        if HAVE_JINJA is False and context.get_config(section, 'template'):
+        if HAVE_JINJA is False and conf(section, 'template'):
             logger.warn("Templating not possible because Jinja2 is not installed")
 
         if HAVE_JINJA is True:
-            template = context.get_config(section, 'template')
+            template = conf(section, 'template')
             if template is not None:
                 try:
                     text = render_template(template, transform_data)
                     if text is not None:
                         item['message'] = text
-                except Exception as e:
-                    logger.warn("Cannot render `%s' template: %s" % (template, str(e)))
+                except Exception as exc:
+                    logger.warn("Cannot render `%s' template: %s", template, exc)
 
         if item.get('message') is not None and len(item.get('message')) > 0:
             st = Struct(**item)
@@ -494,13 +503,15 @@ def processor(worker_id=None):
                 service_logger_name = 'mqttwarn.services.{}'.format(service)
                 srv = make_service(mqttc=mqttc, name=service_logger_name)
                 notified = timeout(module.plugin, (srv, st))
-            except Exception as e:
-                logger.error("Cannot invoke service for `%s': %s" % (service, str(e)))
+            except Exception as exc:
+                logger.error("Cannot invoke service for `%s': %s", service, exc)
 
             if not notified:
-                logger.warn("Notification of %s for `%s' FAILED or TIMED OUT" % (service, item.get('topic')))
+                logger.warn("Notification of %s for '%s' FAILED or TIMED OUT", service,
+                            item.get('topic'))
         else:
-            logger.warn("Notification of %s for `%s' suppressed: text is empty" % (service, item.get('topic')))
+            logger.warn("Notification of %s for '%s' suppressed: text is empty", service,
+                        item.get('topic'))
 
         q_in.task_done()
 
@@ -513,7 +524,7 @@ def load_services(services):
 
         service_config = cf.config('config:' + service)
         if service_config is None:
-            logger.error("Service `%s' has no config section" % service)
+            logger.error("Service `%s' has no config section", service)
             sys.exit(1)
 
         service_plugins[service]['config'] = service_config
@@ -523,7 +534,7 @@ def load_services(services):
 
         try:
             service_plugins[service]['module'] = load_module(modulefile)
-            logger.info('Successfully loaded service "{}"'.format(service))
+            logger.info("Successfully loaded service '%s'", service)
         except Exception as exc:
             logger.exception('Unable to load service "%s" from file "%s": %s',
                              service, modulefile, exc)
@@ -537,16 +548,16 @@ def connect():
     # FIXME: Remove global variables
     global mqttc
 
-    try:
-        services = cf.getlist('defaults', 'launch')
-    except:
+    services = cf.getlist('defaults', 'launch')
+
+    if not services:
         logger.error("No services configured. Aborting")
         sys.exit(2)
 
     try:
         os.chdir(cf.directory)
-    except Exception as e:
-        logger.error("Cannot chdir to %s: %s" % (cf.directory, str(e)))
+    except Exception as exc:
+        logger.error("Cannot chdir to %s: %s", cf.directory, exc)
         sys.exit(2)
 
     load_services(services)
@@ -555,7 +566,7 @@ def connect():
     mqttc = paho.Client(cf.clientid, clean_session=cf.cleansession, protocol=cf.protocol,
                         transport=cf.transport)
 
-    logger.debug("Attempting connection to MQTT broker %s:%d..." % (cf.hostname, int(cf.port)))
+    logger.debug("Attempting connection to MQTT broker %s:%s...", cf.hostname, cf.port)
     mqttc.on_connect = on_connect
     mqttc.on_message = on_message
     mqttc.on_disconnect = on_disconnect
@@ -566,26 +577,26 @@ def connect():
 
     # set the lwt before connecting
     if cf.lwt is not None:
-        logger.debug("Setting LWT to %s..." % (cf.lwt))
+        logger.debug("Setting Last Will and Testament to %s...", cf.lwt)
         mqttc.will_set(cf.lwt, payload=LWTDEAD, qos=0, retain=True)
 
     # Delays will be: 3, 6, 12, 24, 30, 30, ...
     # mqttc.reconnect_delay_set(delay=3, delay_max=30, exponential_backoff=True)
 
-    if cf.tls == True:
-        mqttc.tls_set(cf.ca_certs, cf.certfile, cf.keyfile, tls_version=cf.tls_version, ciphers=None)
+    if cf.tls:
+        mqttc.tls_set(cf.ca_certs, cf.certfile, cf.keyfile, tls_version=cf.tls_version)
 
     if cf.tls_insecure:
         mqttc.tls_insecure_set(True)
 
     try:
         mqttc.connect(cf.hostname, int(cf.port), 60)
-    except Exception as e:
-        logger.exception("Cannot connect to MQTT broker at %s:%d: %s" % (cf.hostname, int(cf.port), str(e)))
+    except Exception as exc:
+        logger.exception("Cannot connect to MQTT broker at %s:%s: %s", cf.hostname, cf.port, exc)
         sys.exit(2)
 
     # Launch worker threads to operate on queue
-    logger.info('Starting %s worker threads' % cf.num_workers)
+    logger.info('Starting %s worker threads', cf.num_workers)
     for i in range(cf.num_workers):
         t = threading.Thread(target=processor, kwargs={'worker_id': i})
         t.daemon = True
@@ -601,13 +612,15 @@ def connect():
                 func = load_function(name=name, filepath=cf.functions)
                 cron_options = parse_cron_options(val)
                 interval = cron_options['interval']
-                logger.debug('Scheduling function "{name}" as periodic task ' \
-                              'to run each {interval} seconds via [cron] section'.format(name=name, interval=interval))
+                logger.debug("Scheduling function '%s' as periodic task to run every %s "
+                             "seconds via [cron] section", name, interval)
                 service = make_service(mqttc=mqttc, name='mqttwarn.cron')
-                ptlist[name] = PeriodicThread(callback=func, period=interval, name=name, srv=service, now=asbool(cron_options.get('now')))
+                ptlist[name] = PeriodicThread(callback=func, period=interval, name=name,
+                                              srv=service, now=asbool(cron_options.get('now')))
                 ptlist[name].start()
             except AttributeError:
-                logger.error("[cron] section has function [%s] specified, but that's not defined" % name)
+                logger.error("[cron] section has function [%s] specified, but that's not defined.",
+                             name)
                 continue
 
     while not exit_flag:
@@ -617,12 +630,11 @@ def connect():
             mqttc.loop_forever()
         except socket.error:
             pass
-        except:
-            # FIXME: add logging with trace
-            raise
+        # FIXME: add logging with trace for any other exceptions
 
         if not exit_flag:
-            logger.warning("MQTT server disconnected, trying to reconnect each %s seconds" % reconnect_interval)
+            logger.warning("MQTT server disconnected, trying to reconnect each %s seconds",
+                           reconnect_interval)
             time.sleep(reconnect_interval)
 
 
@@ -632,12 +644,13 @@ def cleanup(signum=None, frame=None):
     in the event of a SIGTERM or SIGINT.
     """
     for ptname in ptlist:
-        logger.debug("Cancel %s timer" % ptname)
+        logger.debug("Cancel %s timer", ptname)
         ptlist[ptname].cancel()
 
     logger.debug("Disconnecting from MQTT broker...")
     if cf.lwt is not None:
         mqttc.publish(cf.lwt, LWTDEAD, qos=0, retain=True)
+
     mqttc.loop_stop()
     mqttc.disconnect()
 
@@ -655,7 +668,8 @@ def cleanup(signum=None, frame=None):
 def bootstrap(config=None, scriptname=None):
     # FIXME: Remove global variables
     global context, cf, SCRIPTNAME
-    invoker = FunctionInvoker(config=config, srv=make_service(mqttc=mqttc, name='mqttwarn.context'))
+    invoker = FunctionInvoker(config=config,
+                              srv=make_service(mqttc=mqttc, name='mqttwarn.context'))
     context = RuntimeContext(config=config, invoker=invoker)
     cf = config
     SCRIPTNAME = scriptname
@@ -694,4 +708,4 @@ def run_plugin(config=None, name=None, data=None):
     # Launch plugin
     module = service_plugins[name]['module']
     response = module.plugin(srv, item)
-    logger.info('Plugin response: {}'.format(response))
+    logger.info('Plugin response: %r', response)
