@@ -55,11 +55,11 @@ class Config(RawConfigParser):
         self.transport = 'tcp'
         self.username = None
         self.password = None
-        self.clientid = None
+        self.client_id = None
         self.lwt = None
         self.skipretained = False
-        self.cleansession = False
-        self.protocol = 3
+        self.clean_session = False
+        self.protocol = 4
 
         self.logformat = '%(asctime)-15s %(levelname)-8s [%(name)-25s] %(message)s'
         self.logfile = None

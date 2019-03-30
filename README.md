@@ -162,14 +162,16 @@ Most of the options in the configuration file have sensible defaults, and/or oug
 
 ```ini
 [defaults]
-hostname     = 'localhost'         ; default
-port         = 1883
-username     = None
-password     = None
-clientid     = 'mqttwarn'
-lwt          = 'clients/mqttwarn'  ; lwt payload is '0' or '1'
-skipretained = True
-cleansession = False
+hostname      = 'localhost'         ; default
+port          = 1883
+transport     = 'tcp'
+protocol      = 4                   ; MQTTv31 = 3, MQTTv311 = 4 (default)
+username      = None
+password      = None
+client_id     = 'mqttwarn'
+lwt           = 'clients/mqttwarn'  ; lwt payload is '0' or '1'
+skipretained  = True
+clean_session = False
 
 ; logging
 logformat = '%(asctime)-15s %(levelname)-5s [%(module)s] %(message)s'

@@ -145,9 +145,10 @@ def on_connect(mosq, userdata, flags, result_code):
     """
     if result_code == 0:
         logger.debug("Connected to MQTT broker, subscribing to topics...")
-        if not cf.cleansession:
-            logger.debug("Cleansession==False; previous subscriptions for clientid %s remain "
-                         "active on broker", cf.clientid)
+
+        if not cf.clean_session:
+            logger.debug("clean_session==False; previous subscriptions for client_id '%s' remain "
+                         "active on broker", cf.client_id)
 
         subscribed = []
         for section in context.get_sections():
@@ -556,7 +557,7 @@ def connect():
     load_services(services)
 
     # Initialize MQTT broker connection
-    mqttc = paho.Client(cf.clientid, clean_session=cf.cleansession, protocol=cf.protocol,
+    mqttc = paho.Client(cf.client_id, clean_session=cf.clean_session, protocol=cf.protocol,
                         transport=cf.transport)
 
     logger.debug("Attempting connection to MQTT broker %s:%s...", cf.hostname, cf.port)

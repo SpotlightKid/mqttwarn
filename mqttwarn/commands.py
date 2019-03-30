@@ -109,7 +109,7 @@ def load_configuration(configfile=None, name=None):
         raise ValueError('Configuration file "{}" does not exist'.format(configfile))
 
     defaults = {
-        'clientid': name,
+        'client_id': name,
         'lwt': 'clients/{}'.format(name),
         'logfile': os.getenv(name.upper() + 'LOG', name + '.log'),
     }
