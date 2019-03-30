@@ -112,7 +112,7 @@ class Job(object):
         self.payload = payload  # raw payload
         self.data = data        # decoded payload
         self.target = target
-        logger.debug("New `%s:%s' job: %s", service, target, topic)
+        logger.debug("New '%s:%s' job: %s", service, target, topic)
 
     def __cmp__(self, other):
         return ((self.prio > other.prio) - (self.prio < other.prio))
@@ -389,7 +389,7 @@ def decode_payload(section, topic, payload):
         transform_data.update(topic_data)
 
     # The dict returned is completely merged into transformation data
-    # The difference between this and `get_topic_data()' is that this
+    # The difference between this and `get_topic_data()` is that this
     # function receives the topic string as well as the payload and any
     # existing transformation data, and it can do 'things' with all.
     # This is the way it should originally have been, but I can no
@@ -432,7 +432,7 @@ def processor(worker_id=None):
         target = job.target
         topic = job.topic
 
-        logger.debug("Processor #%s is handling: `%s' for %s", worker_id, service, target)
+        logger.debug("Processor #%s is handling: '%s' for %s", worker_id, service, target)
 
         # Sanity checks.
         # If service configuration or targets can not be obtained successfully,
@@ -487,7 +487,7 @@ def processor(worker_id=None):
                     if text is not None:
                         item['message'] = text
                 except Exception as exc:
-                    logger.warn("Cannot render `%s' template: %s", template, exc)
+                    logger.warn("Cannot render '%s' template: %s", template, exc)
 
         if item.get('message') is not None and len(item.get('message')) > 0:
             st = Struct(**item)
@@ -499,7 +499,7 @@ def processor(worker_id=None):
                 srv = make_service(mqttc=mqttc, name=service_logger_name)
                 notified = timeout(module.plugin, (srv, st))
             except Exception as exc:
-                logger.error("Cannot invoke service for `%s': %s", service, exc)
+                logger.error("Cannot invoke service for '%s': %s", service, exc)
 
             if not notified:
                 logger.warn("Notification of %s for '%s' FAILED or TIMED OUT", service,
@@ -519,7 +519,7 @@ def load_services(services):
 
         service_config = cf.config('config:' + service)
         if service_config is None:
-            logger.error("Service `%s' has no config section", service)
+            logger.error("Service '%s' has no config section", service)
             sys.exit(1)
 
         service_plugins[service]['config'] = service_config
@@ -569,7 +569,7 @@ def connect():
 
     # set the lwt before connecting
     if cf.lwt is not None:
-        logger.debug("Setting Last Will and Testament to %s...", cf.lwt)
+        logger.debug("Setting Last Will and Testament to topic '%s', value %r", cf.lwt, LWTDEAD)
         mqttc.will_set(cf.lwt, payload=LWTDEAD, qos=0, retain=True)
 
     # Delays will be: 3, 6, 12, 24, 30, 30, ...
