@@ -409,7 +409,8 @@ def decode_payload(section, topic, payload):
     except Exception as exc:
         logger.debug("Cannot decode JSON object, payload=%s: %s", payload, exc)
     else:
-        transform_data.update(payload_data)
+        if isinstance(payload_data, dict):
+            transform_data.update(payload_data)
 
     return transform_data
 
