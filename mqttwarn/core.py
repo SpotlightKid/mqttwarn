@@ -490,8 +490,9 @@ def processor(worker_id=None):
         if item.get('message') is not None and len(item.get('message')) > 0:
             st = Struct(**item)
             notified = False
+
             try:
-                # Fire the plugin in a separate thread and kill it if it doesn't return in 10s
+                # Run the plugin in a separate thread and kill it if it doesn't return in 10s
                 module = service_plugins[service]['module']
                 service_logger_name = 'mqttwarn.services.{}'.format(service)
                 srv = make_service(mqttc=mqttc, name=service_logger_name)
@@ -623,7 +624,7 @@ def connect():
         # FIXME: add logging with trace for any other exceptions
 
         if not exit_flag:
-            logger.warning("MQTT server disconnected, trying to reconnect each %s seconds",
+            logger.warning("MQTT server disconnected, trying to reconnect every %s seconds",
                            reconnect_interval)
             time.sleep(reconnect_interval)
 
