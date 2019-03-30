@@ -60,7 +60,7 @@ class RuntimeContext(object):
 
     def get_config(self, section, name):
         if self.config.has_option(section, name):
-            return self.config.get(section, name)
+            return self.config.g(section, name)
 
     def is_filtered(self, section, topic, payload):
         if self.config.has_option(section, 'filter'):
