@@ -132,7 +132,7 @@ class Config(RawConfigParser):
         try:
             data = self.g(section, key)
             if not isinstance(data, dict):
-                raise TypeError("Option value is not a dictionary.")
+                raise TypeError("Option value %r is not a dictionary." % (data,))
         except Exception as exc:
             logger.warn("Expecting a dict in section '%s', key '%s': %s", section, key, exc)
         else:
