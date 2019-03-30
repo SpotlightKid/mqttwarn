@@ -119,12 +119,9 @@ class Job(object):
 
 
 def render_template(filename, data):
-    text = None
-    if HAVE_JINJA is True:
+    if HAVE_JINJA:
         template = jenv.get_template(filename)
-        text = template.render(data)
-
-    return text
+        return template.render(data)
 
 
 # MQTT broker callbacks
@@ -365,8 +362,7 @@ def xform(function, orig_value, transform_data):
         function_name = sanitize_function_name(function)
         if function_name is not None:
             try:
-                res = cf.datamap(function_name, transform_data)
-                return res
+                return cf.datamap(function_name, transform_data)
             except Exception as exc:
                 logger.warn("Cannot invoke %s(): %s", function_name, exc)
 
@@ -478,10 +474,10 @@ def processor(worker_id=None):
             item['priority'] = 0
             logger.warn("Failed to determine the priority, defaulting to zero: %s", exc)
 
-        if HAVE_JINJA is False and conf(section, 'template'):
+        if not HAVE_JINJA and conf(section, 'template'):
             logger.warn("Templating not possible because Jinja2 is not installed")
 
-        if HAVE_JINJA is True:
+        if HAVE_JINJA:
             template = conf(section, 'template')
             if template is not None:
                 try:
