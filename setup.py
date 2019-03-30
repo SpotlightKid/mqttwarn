@@ -152,7 +152,7 @@ setup(
     author_email='jpmens()gmail.com, ben.jones12()gmail.com',
     maintainer='Christopher Arndt',
     maintainer_email='info@chrisarndt.de',
-    url='https://github.com/jpmens/mqttwarn',
+    url='https://github.com/SpotlightKid/mqttwarn',
     keywords='mqtt notification plugins data acquisition push transformation engine mosquitto',
     packages=find_packages(),
     include_package_data=True,
