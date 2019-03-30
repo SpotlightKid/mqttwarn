@@ -107,10 +107,10 @@ class Config(RawConfigParser):
         except NoOptionError:
             return default
 
-        try:
-            if val.upper() in self.specials:
-                return self.specials[val.upper()]
+        if val.upper() in self.specials:
+            return self.specials[val.upper()]
 
+        try:
             return ast.literal_eval(val)
         except ValueError:
             # e.g. %(xxx)s in string
@@ -130,11 +130,13 @@ class Config(RawConfigParser):
 
     def getdict(self, section, key):
         try:
-            val = self.g(section, key)
-            return dict(val)
+            data = self.g(section, key)
+            if not isinstance(data, dict):
+                raise TypeError("Option value is not a dictionary.")
         except Exception as exc:
             logger.warn("Expecting a dict in section '%s', key '%s': %s", section, key, exc)
-            return None
+        else:
+            return data
 
     def config(self, section):
         """Convert a whole section's options into a dict.

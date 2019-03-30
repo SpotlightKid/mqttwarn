@@ -99,9 +99,7 @@ class RuntimeContext(object):
         return None
 
     def get_topic_targets(self, section, topic, data):
-        """
-        Topic targets function invoker.
-        """
+        """Topic targets function invoker."""
         if self.config.has_option(section, 'targets'):
             name = sanitize_function_name(self.config.get(section, 'targets'))
             try:
@@ -112,10 +110,7 @@ class RuntimeContext(object):
         return None
 
     def get_service_config(self, service):
-        config = self.config.config('config:' + service)
-        if config is None:
-            return {}
-        return dict(config)
+        return self.config.config('config:' + service) or {}
 
     def get_service_targets(self, service):
         targets = self.config.getdict('config:' + service, 'targets')
