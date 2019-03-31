@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
 # (c) 2014-2019 The mqttwarn developers
 
-import imp
-import json
-import os
+import importlib
 import pkg_resources
 import re
-import string
-import sys
 
 import six
 
@@ -20,7 +16,7 @@ except ImportError:
 
 
 class Struct:
-    """Convert Python dict to object.
+    """Convert Python dict to data object.
 
     http://stackoverflow.com/questions/1305532/
 
@@ -34,76 +30,8 @@ class Struct:
     def get(self, key, default=None):
         return self.__dict__.get(key, default)
 
-    def enum(self):
+    def todict(self):
         return {k: v for k, v in six.iteritems(self.__dict__)}
-
-
-class Formatter(string.Formatter):
-    """A custom string formatter.
-
-    See also:
-
-    - https://docs.python.org/2/library/string.html#format-string-syntax
-    - https://docs.python.org/2/library/string.html#custom-string-formatting
-
-    """
-
-    def convert_field(self, value, conversion):
-        """Convert format string placeholder value according to conversion field.
-
-        The conversion field causes a type coercion before formatting.
-        By default, two conversion flags are supported: '!s' which calls
-        str() on the value, and '!r' which calls repr().
-
-        This also adds the '!j' conversion flag, which serializes the value to
-        JSON format.
-
-        See also https://github.com/jpmens/mqttwarn/issues/146.
-
-        """
-        if conversion == 'j':
-            value = json.dumps(value)
-
-        return value
-
-
-def asbool(obj):
-    """Convert given object into a boolen value.
-
-    Shamelessly stolen from beaker.converters
-
-    (c) 2005 Ian Bicking and contributors; written for Paste (http://pythonpaste.org)
-    Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
-
-    """
-    if isinstance(obj, six.string_types):
-        obj = obj.strip().lower()
-        if obj in ['true', 'yes', 'on', 'y', 't', '1']:
-            return True
-        elif obj in ['false', 'no', 'off', 'n', 'f', '0']:
-            return False
-        else:
-            raise ValueError(
-                "String is not true/false: %r" % obj)
-    return bool(obj)
-
-
-def parse_cron_options(argstring):
-    """Parse periodic task options.
-
-    Obtains configuration value, returns dictionary.
-
-    Example::
-
-        my_periodic_task = 60; now=true
-
-    """
-    parts = argstring.split(';')
-    options = {'interval': float(parts[0].strip())}
-    for part in parts[1:]:
-        name, value = part.split('=')
-        options[name.strip()] = value.strip()
-    return options
 
 
 # FIXME: does not work, functions hangs until thread exits
@@ -143,27 +71,49 @@ def sanitize_function_name(s):
     return func
 
 
-# http://code.davidjanes.com/blog/2008/11/27/how-to-dynamically-load-python-code/
-def load_module(path, encoding=None):
-    if not encoding:
-        encoding = sys.getfilesystemencoding()
+def is_funcspec(s):
+    if s and ':' in s:
+        dottedpath, name = s.split(':', 1)
 
-    with open(path, 'rb') as fp:
-        return imp.load_source(md(path.encode(encoding)).hexdigest(), path, fp)
+        for identifier in dottedpath.split('.'):
+            if not re.match(r'[_a-zA-Z][_a-zA-Z0-9]*$', identifier):
+                return False
+
+        return bool(re.match(r'[_a-zA-Z][_a-zA-Z0-9]*\(\)', name))
+
+    return False
 
 
-def load_function(name, filepath):
-    assert name, 'Function name must not be empty or None'
-    assert filepath, 'Path to module file must not be empty or None'
+def load_function(dottedpath, name, extra_pkgs=None):
+    mod = None
 
-    mod_name, file_ext = os.path.splitext(os.path.split(filepath)[-1])
+    if not name.startswith('.'):
+        try:
+            mod = importlib.import_module(dottedpath)
+        except ModuleNotFoundError:
+            pass
 
-    if file_ext.lower() == '.py':
-        py_mod = imp.load_source(mod_name, filepath)
-    elif file_ext.lower() == '.pyc':
-        py_mod = imp.load_compiled(mod_name, filepath)
+    if not mod and extra_pkgs:
+        for pkg in extra_pkgs:
+            try:
+                mod = importlib.import_module(pkg + '.' + dottedpath)
+            except ModuleNotFoundError:
+                pass
+            else:
+                break
 
-    return getattr(py_mod, name, None)
+    if not mod:
+        raise ModuleNotFoundError("Could not find module '%s'." % dottedpath)
+
+    func = getattr(mod, name, None)
+
+    if func is None:
+        raise ImportError("Could not import '%s' from '%s'" % (name, dottedpath))
+
+    if not callable(func):
+        raise TypeError("'%s:%s' is not callable" % (name, dottedpath))
+
+    return func
 
 
 def get_resource_content(package, filename, encoding='utf-8'):

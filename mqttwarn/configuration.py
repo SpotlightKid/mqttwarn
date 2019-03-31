@@ -8,9 +8,10 @@ import logging
 from io import open
 
 try:
-    from configparser import RawConfigParser, NoOptionError
+    from configparser import RawConfigParser, NoOptionError, _UNSET
 except ImportError:
     from ConfigParser import RawConfigParser, NoOptionError
+    _UNSET = object()
 
 HAVE_TLS = True
 try:
@@ -65,7 +66,6 @@ class Config(RawConfigParser):
         self.logfile = None
         self.loglevel = 'DEBUG'
 
-        self.functions = None
         self.num_workers = 1
 
         self.directory = '.'
@@ -101,11 +101,12 @@ class Config(RawConfigParser):
     def level2number(self, level):
         return self.loglevels.get(level.upper(), self.loglevels['DEBUG'])
 
-    def g(self, section, key, default=None):
+    def g(self, section, key, fallback=_UNSET):
         try:
             val = self.get(section, key)
         except NoOptionError:
-            return default
+            if fallback is not _UNSET:
+                return fallback
 
         if val.upper() in self.specials:
             return self.specials[val.upper()]
@@ -119,26 +120,40 @@ class Config(RawConfigParser):
             # If not a valid Python literal, e.g. list of targets comma-separated
             return val
 
-    def getlist(self, section, key):
-        """Return a list, return None if key is not present in section."""
-        try:
-            val = self.get(section, key)
-            return [s.strip() for s in val.split(',')]
-        except Exception as exc:
-            logger.warn("Expecting a list in section '%s', key '%s': %s", section, key, exc)
-            return None
+    def getlist(self, section, option, fallback=_UNSET):
+        """Return value of given section and option as a list,
 
-    def getdict(self, section, key):
+        Raises NoOptionError if option is not present in section and no fallback
+        value was specified.
+
+        """
         try:
-            data = self.g(section, key)
-            if not isinstance(data, dict):
-                raise TypeError("Option value %r is not a dictionary." % (data,))
-        except Exception as exc:
-            logger.warn("Expecting a dict in section '%s', key '%s': %s", section, key, exc)
+            val = self.get(section, option)
+        except NoOptionError:
+            if fallback is not _UNSET:
+                return fallback
+
+            raise
         else:
-            return data
+            return [elem.strip() for elem in val.split(',')]
 
-    def config(self, section):
+    def getdict(self, section, option, fallback=_UNSET):
+        """Return value of given section and option as a dictionary.
+
+        Raises NoOptionError if option is not present in section and no fallback
+        value was specified.
+
+        Raises TypeError if option value can not be parsed as a dictionary.
+
+        """
+        data = self.g(section, option)
+
+        if not isinstance(data, dict):
+            raise TypeError("Option value %r is not a dictionary." % (data,))
+
+        return data
+
+    def config(self, section, exclude_keys=('targets', 'module')):
         """Convert a whole section's options into a dict.
 
         E.g. turns::
@@ -162,4 +177,4 @@ class Config(RawConfigParser):
         """
         if self.has_section(section):
             return {key: self.g(section, key)
-                    for key in self.options(section) if key not in ('targets', 'module')}
+                    for key in self.options(section) if key not in exclude_keys}
