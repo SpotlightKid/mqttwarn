@@ -30,6 +30,9 @@ extras = {
     'celery': [
         'celery',
     ],
+    'dbus': [
+        'pydbus>=0.6.0',
+    ],
     'dnsupdate': [
         'dnspython>=1.15.0',
     ],
