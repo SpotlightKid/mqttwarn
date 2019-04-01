@@ -55,7 +55,6 @@ cf = None
 # Global handle to MQTT client
 mqttc = None
 
-
 # Initialize processor queue
 q_in = queue.Queue(maxsize=0)
 exit_flag = False
@@ -120,7 +119,7 @@ class TopicHandler(object):
         """Decode message payload through transformation machinery."""
         data = msg.data().copy()
 
-        # Attempt to decode the payload from JSON. If payload decodes to a
+        # Attempt to decode the payload as JSON. If payload decodes to a
         # dictionary, update transformation data dict with it.
         try:
             payload_data = msg.json()
