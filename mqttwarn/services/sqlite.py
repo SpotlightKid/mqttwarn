@@ -19,10 +19,10 @@ def plugin(srv, item):
     Expects addrs to contain (path, tablename).
 
     """
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     if sqlite3 is None:
-        srv.logging.warn("sqlite3 is not installed.")
+        srv.log.warn("sqlite3 is not installed.")
         return False
 
     path = item.addrs[0]
@@ -31,14 +31,14 @@ def plugin(srv, item):
     try:
         conn = sqlite3.connect(path)
     except sqlite3.Error as exc:
-        srv.logging.warn("Cannot connect to sqlite at '%s': %s", path, exc)
+        srv.log.warn("Cannot connect to sqlite at '%s': %s", path, exc)
         return False
 
     try:
         with conn:
             conn.execute('CREATE TABLE IF NOT EXISTS "%s" (payload TEXT)' % table)
     except sqlite3.Error as exc:
-        srv.logging.warn("Cannot create sqlite table '%s' in '%s': %s", table, path, exc)
+        srv.log.warn("Cannot create sqlite table '%s' in '%s': %s", table, path, exc)
         conn.close()
         return False
 
@@ -46,7 +46,7 @@ def plugin(srv, item):
         with conn:
             conn.execute('INSERT INTO "%s" VALUES (?)' % table, (item.message,))
     except sqlite3.Error as exc:
-        srv.logging.warn("Cannot INSERT INTO sqlite table '%s': %s", table, exc)
+        srv.log.warn("Cannot INSERT INTO sqlite table '%s': %s", table, exc)
     finally:
         conn.close()
 

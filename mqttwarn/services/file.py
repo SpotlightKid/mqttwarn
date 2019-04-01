@@ -8,7 +8,7 @@ __license__ = "Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-
 
 def plugin(srv, item):
     """file service plugin."""
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
     mode = 'a'
 
     # item.config is brought in from the configuration file
@@ -34,7 +34,7 @@ def plugin(srv, item):
         with open(filename, mode) as fp:
             fp.write(text)
     except Exception as exc:
-        srv.logging.warning("Cannot write to file `%s': %s", filename, exc)
+        srv.log.warning("Cannot write to file `%s': %s", filename, exc)
         return False
 
     return True

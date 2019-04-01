@@ -15,7 +15,7 @@ from .core import bootstrap, connect, cleanup, run_plugin
 from .util import get_resource_content
 
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 APP_NAME = 'mqttwarn'
 
@@ -72,7 +72,7 @@ def launch_plugin_standalone(plugin, data):
 
     # Setup logging
     setup_logging(config)
-    logger.info("Running service plugin '%s' with data '%s'.", plugin, data)
+    log.info("Running service plugin '%s' with data '%s'.", plugin, data)
 
     # Launch service plugin
     run_plugin(config=config, name=plugin, data=data)
@@ -87,8 +87,8 @@ def run_mqttwarn():
 
     # Setup logging
     setup_logging(config)
-    logger.info("Starting %s", scriptname)
-    logger.info("Log level is %s", logging.getLevelName(logger.getEffectiveLevel()))
+    log.info("Starting %s.", scriptname)
+    log.info("Log level is %s.", logging.getLevelName(log.getEffectiveLevel()))
 
     # Handle signals
     signal.signal(signal.SIGTERM, cleanup)

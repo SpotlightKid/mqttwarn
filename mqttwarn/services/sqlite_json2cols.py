@@ -28,10 +28,10 @@ def plugin(srv, item):
     or numeric values.
 
     """
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     if sqlite3 is None:
-        srv.logging.warn("sqlite3 is not installed")
+        srv.log.warn("sqlite3 is not installed")
         return False
 
     path = item.addrs[0]
@@ -39,7 +39,7 @@ def plugin(srv, item):
     data = item.data
 
     if not data or not isinstance(data, dict):
-        srv.logging.warn("Incorrect payload format (must be dict).")
+        srv.log.warn("Incorrect payload format (must be dict).")
 
     col_names = []
     col_definitions = []
@@ -49,7 +49,7 @@ def plugin(srv, item):
     # Data is expected to be a dict mapping column names to values, e.g.
     # {"sensor_id": "testsensor", "whatdata": "hello", "data": 1}
     for key in data:
-        srv.logging.debug("Key: %r", key)
+        srv.log.debug("Key: %r", key)
         key = key.strip()
 
         if not key or key.startswith('_') or key in ('payload', 'topic'):
@@ -72,7 +72,7 @@ def plugin(srv, item):
             col_values.append(value)
 
     if not col_names:
-        srv.logging.warn("No valid column fields found in payload")
+        srv.log.warn("No valid column fields found in payload")
         return False
 
     # Derive SQL table column definition string in case the table has to be created
@@ -88,30 +88,30 @@ def plugin(srv, item):
     try:
         conn = sqlite3.connect(path)
     except sqlite3.Error as exc:
-        srv.logging.warn("Cannot connect to sqlite at '%s': %s", path, exc)
+        srv.log.warn("Cannot connect to sqlite at '%s': %s", path, exc)
         return False
 
     try:
         query = 'CREATE TABLE IF NOT EXISTS "%s" (%s);' % (table, col_definitions)
-        srv.logging.debug("Creating SQLite table: %s", query)
+        srv.log.debug("Creating SQLite table: %s", query)
         with conn:
             conn.execute(query)
     except sqlite3.Error as exc:
-        srv.logging.warn("Cannot create sqlite table '%s' in '%s': %s", table, path, exc)
+        srv.log.warn("Cannot create sqlite table '%s' in '%s': %s", table, path, exc)
         conn.close()
         return False
     else:
-        srv.logging.debug("SQLite CREATE TABLE sucessful")
+        srv.log.debug("SQLite CREATE TABLE sucessful")
 
     try:
         query = 'INSERT INTO "%s" (%s) VALUES (%s);' % (table, col_names, col_placeholders)
-        srv.logging.debug("Insert into SQLite: %s %% %r", query, tuple(col_values))
+        srv.log.debug("Insert into SQLite: %s %% %r", query, tuple(col_values))
         with conn:
             conn.execute(query, col_values)
     except sqlite3.Error as exc:
-        srv.logging.warn("Cannot INSERT INTO sqlite table '%s': %s", table, exc)
+        srv.log.warn("Cannot INSERT INTO sqlite table '%s': %s", table, exc)
     else:
-        srv.logging.debug("SQLite INSERT successful.")
+        srv.log.debug("SQLite INSERT successful.")
     finally:
         conn.close()
 

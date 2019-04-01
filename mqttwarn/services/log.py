@@ -8,22 +8,22 @@ __license__ = "Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-
 
 def plugin(srv, item):
     """log service plugin."""
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
     level = item.addrs[0]
     text = item.message
 
     levels = {
-        'debug': srv.logging.debug,
-        'info': srv.logging.info,
-        'warn': srv.logging.warning,
-        'crit': srv.logging.critical,
-        'error': srv.logging.error,
+        'debug': srv.log.debug,
+        'info': srv.log.info,
+        'warn': srv.log.warning,
+        'crit': srv.log.critical,
+        'error': srv.log.error,
     }
 
     try:
         levels[level]("%s", text)
     except Exception as exc:
-        srv.logging.warn("Cannot invoke service log with level `%s': %s", level, exc)
+        srv.log.warn("Cannot invoke service log with level `%s': %s", level, exc)
         return False
 
     return True

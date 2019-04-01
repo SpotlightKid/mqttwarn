@@ -5,7 +5,7 @@ import logging
 import threading
 
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 # This class, shamelessly stolen from https://gist.github.com/cypreess/5481681
@@ -48,7 +48,7 @@ class PeriodicThread(object):
         try:
             self.run()
         except Exception as exc:
-            logger.exception("Exception in running periodic thread: %s", exc)
+            log.exception("Exception in running periodic thread: %s", exc)
         finally:
             with self.schedule_lock:
                 if not self.stop:

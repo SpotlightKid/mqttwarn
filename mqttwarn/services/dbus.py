@@ -42,10 +42,10 @@ def plugin(srv, item):
         image = '/usr/share/icons/gnome/32x32/places/network-server.png'
 
     """
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     if not pydbus:
-        srv.logging.error("Cannot send DBUS message; 'pydbus' module not installed.")
+        srv.log.error("Cannot send DBUS message; 'pydbus' module not installed.")
         return False
 
     try:
@@ -66,20 +66,19 @@ def plugin(srv, item):
         path = cfg.get('path')
         interface = cfg.get('interface', service)
     except Exception as exc:
-        srv.logging.error("Error setting up dbus service %s: %s", item.target, exc)
+        srv.log.error("Error setting up dbus service %s: %s", item.target, exc)
 
     try:
-        srv.logging.debug("Sending message to %s...", item.target)
+        srv.log.debug("Calling method '%s' on DBUS interface '%s'...", method, interface)
         session_bus = pydbus.SessionBus()
         obj = session_bus.get(service, path)
-        interface = obj[interface]
-        getattr(interface, method)(*args)
+        res = getattr(obj[interface], method)(*args)
     except AttributeError:
-        srv.logging.error("DBUS interface has not method '%s'.", interface, method)
+        srv.log.error("DBUS interface '%s' has not method '%s'.", interface, method)
     except Exception as exc:
-        srv.logging.error("Error sending message to %s: %s", item.target, exc)
+        srv.log.error("Calling method '%s' on DBUS interface '%s': %s", method, interface, exc)
     else:
-        srv.logging.debug("Successfully sent message.")
+        srv.log.debug("DBUS method called successfully. Result: %r", res)
         return True
 
     return False

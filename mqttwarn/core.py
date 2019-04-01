@@ -37,7 +37,7 @@ else:
     jenv.filters['jsonify'] = json.dumps
 
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # lwt values - may make these configurable later?
 LWTALIVE = "1"
@@ -81,7 +81,7 @@ class Service(object):
         self.mwcore = globals()
 
         # Reference to logging object
-        self.logging = logger
+        self.log = log
 
         # Name of self ("mqttwarn", mostly)
         self.SCRIPTNAME = SCRIPTNAME
@@ -95,7 +95,7 @@ class Job(object):
         self.msg = msg
         self.data = data
         self.target = target
-        logger.debug("New '%s:%s' job: %s", service['name'], target, msg.topic)
+        log.debug("New '%s:%s' job for topic '%s'.", service['name'], target, msg.topic)
 
     def __cmp__(self, other):
         return ((self.prio > other.prio) - (self.prio < other.prio))
@@ -125,7 +125,7 @@ class TopicHandler(object):
         try:
             payload_data = msg.json()
         except Exception as exc:
-            logger.debug("Cannot decode JSON object, payload=%s: %s", msg.payload, exc)
+            log.debug("Cannot decode payload=%r as JSON: %s", msg.payload, exc)
         else:
             if isinstance(payload_data, dict):
                 data.update(payload_data)
@@ -167,18 +167,18 @@ class TopicHandler(object):
             try:
                 func = load_function(dottedpath, funcname)
             except Exception as exc:
-                logger.warn("Could not import '%s' function '%s' from in topic handler '%s': %s",
-                            field, funcname, self.section, exc)
+                log.warn("Could not import '%s' function '%s' from in topic handler '%s': %s",
+                         field, funcname, self.section, exc)
             try:
                 return func(value, data)
             except Exception as exc:
-                logger.warn("Error invoking '%s' function '%s' defined in '%s': %s",
-                            field, funcname, self.section, exc)
+                log.warn("Error invoking '%s' function '%s' defined in '%s': %s",
+                         field, funcname, self.section, exc)
         elif formatter:
             try:
                 value = formatter.format(value, **data)
             except Exception as exc:
-                logger.warning("Cannot format value: %s", exc)
+                log.warning("Cannot format value: %s", exc)
 
         if isinstance(value, six.string_types):
             value = value.replace("\\n", "\n")
@@ -350,7 +350,7 @@ def on_message(mosq, userdata, msg):
 
 def send_failover(reason, message):
     # Make sure we dump this event to the log
-    logger.warn(message)
+    log.warn(message)
     # Attempt to send the message to our failover targets
     send_to_targets('failover', reason, message)
 
@@ -386,20 +386,20 @@ def send_to_targets(handler, msg):
             if paho.topic_matches_sub(match_topic, topic):
                 # hocus pocus, let targets become a list
                 targetlist = targets if isinstance(targets, list) else [targets]
-                logger.debug("Most specific match %s dispatched to %s", match_topic, targets)
+                log.debug("Most specific match '%s' dispatched to '%s'.", match_topic, targets)
                 # first most specific topic matches then stops processing
                 break
         else:
             # Not found then no action. This could be configured intentionally.
-            logger.debug("Dispatcher definition does not contain matching topic/target pair in "
-                         "section [%s]", section)
+            log.debug("Dispatcher definition does not contain matching topic/target pair in "
+                      "section [%s].", section)
             return
     else:
         targetlist = handler.targets
 
     if not isinstance(targetlist, (tuple, list)):
-        logger.error("Invalid targets definition in section [%s]: %r not a liust or tuple",
-                     section, targetlist)
+        log.error("Invalid targets definition in section [%s]: %r not a list or tuple.",
+                  section, targetlist)
         return
 
     # Interpolate transformation data values into topic targets.
@@ -411,13 +411,13 @@ def send_to_targets(handler, msg):
             target = target.format(**data)
             targetlist_transformed.append((service, target))
         except Exception as exc:
-            logger.exception("Cannot interpolate transformation data into topic handler target "
-                             "'%s' of section '%s': %s", target, section, exc)
-            logger.debug("topic=%s, payload=%r, data=%r", topic, payload, data)
+            log.exception("Cannot interpolate transformation data into topic handler target '%s' "
+                          "of section '%s': %s", target, section, exc)
+            log.debug("topic=%s, payload=%r, data=%r", topic, payload, data)
 
     targetlist = targetlist_transformed
 
-    logger.debug("Final target list for topic '%s': %r", topic, targetlist)
+    log.debug("Final target list for topic '%s': %r", topic, targetlist)
 
     for service, target in targetlist:
         # By now, each target in targetlist is a two-element tuple (service, target)
@@ -426,17 +426,17 @@ def send_to_targets(handler, msg):
         # skip targets with invalid services
         service_inst = service_plugins.get(service)
         if service_inst is None:
-            logger.error("Invalid configuration: topic handler '%s' points to non-existing "
-                         "service '%s'", topic, service)
+            log.error("Invalid configuration: topic handler '%s' points to non-existing service "
+                      "'%s'.", topic, service)
             continue
 
         if target and target not in service_inst['targets']:
-            logger.error("Invalid configuration: topic handler '%s' points to non-existing "
-                         "target '%s' in service '%s'.", section, target, service)
+            log.error("Invalid configuration: topic handler '%s' points to non-existing "
+                      "target '%s' in service '%s'.", section, target, service)
             continue
 
         for target in (target,) if target else tuple(service_inst['targets']):
-            logger.debug("Message on topic '%s' routed to service '%s:%s'", topic, service, target)
+            log.debug("Message on topic '%s' routed to service '%s:%s'.", topic, service, target)
             job = Job(1, service_inst, handler, msg, data, target)
             q_in.put(job)
 
@@ -451,14 +451,14 @@ def processor(worker_id=None):
     conf = context.get_config
 
     while not exit_flag:
-        logger.debug('Job queue has %s items to process', q_in.qsize())
+        log.debug('Job queue has %s items to process.', q_in.qsize())
         job = q_in.get()
 
         service = job.service['name']
         handler = job.handler
         target = job.target
         topic = job.msg.topic
-        logger.debug("Processor #%s is handling '%s:%s'", worker_id, service, target)
+        log.debug("Processor #%s is handling '%s:%s'.", worker_id, service, target)
 
         data = job.data.copy()
         item = {
@@ -479,7 +479,7 @@ def processor(worker_id=None):
             item['priority'] = int(handler.xform('priority', 0, data))
         except Exception as exc:
             item['priority'] = 0
-            logger.debug("Failed to determine the priority, defaulting to zero: %s", exc)
+            log.debug("Failed to determine the priority, defaulting to zero: %s", exc)
 
         template = conf(handler.section, 'template')
 
@@ -491,9 +491,9 @@ def processor(worker_id=None):
                     if text is not None:
                         item['message'] = text
                 except Exception as exc:
-                    logger.warn("Cannot render '%s' template: %s", template, exc)
+                    log.warn("Cannot render template '%s': %s", template, exc)
             else:
-                logger.warn("Templating not possible because Jinja2 is not installed")
+                log.warn("Templating not possible because Jinja2 is not installed.")
 
         if item['message'] or isinstance(item['message'], (float, int)):
             st = Struct(**item)
@@ -506,16 +506,16 @@ def processor(worker_id=None):
                 srv = make_service(mqttc=mqttc, name=service_logger_name)
                 notified = timeout(plugin, (srv, st))
             except Exception as exc:
-                logger.error("Cannot invoke service for '%s': %s", service, exc)
+                log.error("Cannot invoke service for '%s': %s", service, exc)
 
             if not notified:
-                logger.warn("Notification of '%s' for '%s' FAILED or TIMED OUT", service, topic)
+                log.warn("Notification of '%s' for '%s' FAILED or TIMED OUT.", service, topic)
         else:
-            logger.warn("Notification of '%s' for '%s' suppressed: empty message", service, topic)
+            log.warn("Notification of '%s' for '%s' suppressed: empty message.", service, topic)
 
         q_in.task_done()
 
-    logger.debug("Thread exiting...")
+    log.debug("Worker thread #%s exiting...", worker_id)
 
 
 def load_services(services):
@@ -523,13 +523,13 @@ def load_services(services):
         service_config = context.get_service_config(service)
 
         if service_config is None:
-            logger.error("Skipping service '%s' with config section.", service)
+            log.error("Skipping service '%s' with missing config section.", service)
             continue
 
         service_targets = context.get_service_targets(service)
 
         if service_targets is None:
-            logger.error("Skipping service '%s' with no valid targets.", service)
+            log.error("Skipping service '%s' with no valid targets.", service)
             continue
 
         modname = context.get_service_module(service)
@@ -539,11 +539,10 @@ def load_services(services):
         try:
             plugin_func = load_function(modname, 'plugin', extra_pkgs=extra_pkgs)
         except Exception as exc:
-            logger.exception("Unable to load plugin module '%s' for service '%s': %s",
-                             modname, service, exc)
+            log.exception("Unable to load plugin module '%s' for service '%s': %s",
+                          modname, service, exc)
         else:
-            logger.info("Successfully loaded plugin module '%s' for service '%s'.",
-                        modname, service)
+            log.info("Successfully loaded plugin module '%s' for service '%s'.", modname, service)
             service_plugins[service] = {
                 'name': service,
                 'config': service_config,
@@ -583,13 +582,13 @@ def connect():
     services = cf.getlist('defaults', 'launch', fallback=[])
 
     if not services:
-        logger.error("No services configured. Aborting")
+        log.error("No services configured. Aborting.")
         sys.exit(2)
 
     try:
         os.chdir(cf.directory)
     except Exception as exc:
-        logger.error("Cannot chdir to %s: %s", cf.directory, exc)
+        log.error("Cannot chdir to %s: %s", cf.directory, exc)
         sys.exit(2)
 
     load_services(services)
@@ -599,7 +598,6 @@ def connect():
     mqttc = paho.Client(cf.client_id, clean_session=cf.clean_session, protocol=cf.protocol,
                         transport=cf.transport)
 
-    logger.debug("Attempting connection to MQTT broker %s:%s...", cf.hostname, cf.port)
     mqttc.on_connect = on_connect
     mqttc.on_message = on_message
     mqttc.on_disconnect = on_disconnect
@@ -610,7 +608,7 @@ def connect():
 
     # set the lwt before connecting
     if cf.lwt is not None:
-        logger.debug("Setting Last Will and Testament to topic '%s', value %r", cf.lwt, LWTDEAD)
+        log.debug("Setting Last Will and Testament to topic '%s', value %r.", cf.lwt, LWTDEAD)
         mqttc.will_set(cf.lwt, payload=LWTDEAD, qos=0, retain=True)
 
     # Delays will be: 3, 6, 12, 24, 30, 30, ...
@@ -623,13 +621,14 @@ def connect():
         mqttc.tls_insecure_set(True)
 
     try:
+        log.debug("Attempting connection to MQTT broker %s:%s...", cf.hostname, cf.port)
         mqttc.connect(cf.hostname, int(cf.port), 60)
     except Exception as exc:
-        logger.exception("Cannot connect to MQTT broker at %s:%s: %s", cf.hostname, cf.port, exc)
+        log.exception("Cannot connect to MQTT broker at %s:%s: %s", cf.hostname, cf.port, exc)
         sys.exit(2)
 
     # Launch worker threads to operate on queue
-    logger.info('Starting %s worker threads', cf.num_workers)
+    log.info('Starting %s worker threads...', cf.num_workers)
     for i in range(cf.num_workers):
         t = threading.Thread(target=processor, kwargs={'worker_id': i})
         t.daemon = True
@@ -668,13 +667,13 @@ def connect():
             if cf.has_option(section, 'target'):
                 funcspec = cf.get(section, 'target')
             else:
-                logger.error("[cron] section '%s' does not specify target function.", name)
+                log.error("[cron] section '%s' does not specify target function.", name)
                 continue
 
             if cf.has_option(section, 'interval'):
                 interval = cf.getfloat(section, 'interval')
             else:
-                logger.error("[cron] section '%s' does not specify execution interval.", name)
+                log.error("[cron] section '%s' does not specify execution interval.", name)
                 continue
 
             try:
@@ -682,12 +681,12 @@ def connect():
                 dottedpath, funcname = funcspec.split(':', 1)
                 func = load_function(dottedpath, funcname)
             except Exception as exc:
-                logger.error("[cron] could not load function '%s:%s': %s", funcspec, exc)
+                log.error("[cron] could not load function '%s:%s': %s", funcspec, exc)
                 continue
 
             now = cf.getboolean(section, 'now', fallback=False)
-            logger.debug("Scheduling function '%s' as periodic task to run every %s seconds via "
-                         "[cron:%s] section", funcname, interval, name)
+            log.debug("Scheduling function '%s' as periodic task to run every %s seconds via "
+                      "[cron:%s] section.", funcname, interval, name)
             service = make_service(mqttc=mqttc, name='mqttwarn.cron.' + name)
             ptlist[name] = PeriodicThread(callback=func, period=interval, name=name, srv=service,
                                           now=now)
@@ -703,7 +702,7 @@ def connect():
         # FIXME: add logging with trace for any other exceptions
 
         if not exit_flag:
-            logger.warning("MQTT server disconnected, trying to reconnect every %s seconds",
+            log.warning("MQTT server disconnected, trying to reconnect every %s seconds.",
                            reconnect_interval)
             time.sleep(reconnect_interval)
 
@@ -711,25 +710,29 @@ def connect():
 def cleanup(signum=None, frame=None):
     """Signal handler to ensure we disconnect cleanly in the event of a SIGTERM or SIGINT."""
     for ptname in ptlist:
-        logger.debug("Cancel %s timer", ptname)
+        log.debug("Cancelling %s timer...", ptname)
         ptlist[ptname].cancel()
 
-    logger.debug("Disconnecting from MQTT broker...")
+    log.debug("Disconnecting from MQTT broker...")
     if cf.lwt is not None:
         mqttc.publish(cf.lwt, LWTDEAD, qos=0, retain=True)
 
     mqttc.loop_stop()
     mqttc.disconnect()
 
-    logger.info("Waiting for queue to drain")
+    log.info("Waiting for queue to drain...")
     q_in.join()
 
     # Send exit signal to subsystems _after_ queue was drained
     global exit_flag
     exit_flag = True
 
-    logger.debug("Exiting on signal %d", signum)
-    sys.exit(signum)
+    if frame:
+        log.debug("Exiting on signal %d.", retcode)
+        sys.exit(0)
+    else:
+        log.debug("Exiting with return code %d.", retcode)
+        sys.exit(retcode)
 
 
 def bootstrap(config=None, scriptname=None):
@@ -771,4 +774,5 @@ def run_plugin(config=None, name=None, data=None):
     # Launch plugin
     plugin = service_plugins[name]['plugin']
     response = plugin(srv, item)
-    logger.info('Plugin response: %r', response)
+    log.info('Plugin response: %r', response)
+    return response

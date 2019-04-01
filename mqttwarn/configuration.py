@@ -20,7 +20,7 @@ except ImportError:
     HAVE_TLS = False
 
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class Config(RawConfigParser):
@@ -80,7 +80,7 @@ class Config(RawConfigParser):
         self.__dict__.update(self.config('defaults'))
 
         if not HAVE_TLS:
-            logger.error("TLS (SSL) parameters set but no ssl module TLS.")
+            log.error("TLS (SSL) parameters set but no ssl module TLS.")
             sys.exit(2)
 
         if self.ca_certs is not None:

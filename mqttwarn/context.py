@@ -6,7 +6,7 @@ import logging
 from mqttwarn.util import is_funcspec, load_function
 
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class RuntimeContext(object):
@@ -39,7 +39,7 @@ class RuntimeContext(object):
             if self.config.has_option(section, 'targets'):
                 sections.append(section)
             else:
-                logger.warn("Section '%s' has no targets defined.", section)
+                log.warn("Section '%s' has no targets defined.", section)
 
         return sections
 
@@ -72,8 +72,8 @@ class RuntimeContext(object):
                 try:
                     return load_function(dottedpath, funcname)
                 except Exception as exc:
-                    logger.warn("Could not import topic targets function '%s' defined in section "
-                                "'%s': %s", value, section, exc)
+                    log.warn("Could not import topic targets function '%s' defined in section "
+                             "'%s': %s", value, section, exc)
             else:
                 return [target.split(':', 1) for target in self.config.getlist(section, 'targets')]
 
@@ -90,4 +90,4 @@ class RuntimeContext(object):
         try:
             return self.config.getdict('config:' + service, 'targets')
         except Exception as exc:
-            logger.error("No valid targets defined for service '%s': %s", service, exc)
+            log.error("No valid targets defined for service '%s': %s", service, exc)
