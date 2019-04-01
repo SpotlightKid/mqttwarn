@@ -107,6 +107,9 @@ class TopicHandler(object):
         self.config = config
         self.targets = targets
 
+    def __repr__(self):
+        return "<TopicHandler('%s')>" % self.section
+
     @property
     def qos(self):
         return self.config.getint(self.section, 'qos', fallback=0)
