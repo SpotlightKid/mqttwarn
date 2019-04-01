@@ -234,6 +234,106 @@ class MQTTMessageWrapper(object):
         return self._data
 
 
+# MQTT broker callbacks
+def on_connect(mosq, userdata, flags, result_code):
+    """Handle connections (or failures) to the broker.
+
+    This is called after the client has received a CONNACK message
+    from the broker in response to calling connect().
+
+    The result_code is one of:
+    0: Success
+    1: Refused - unacceptable protocol version
+    2: Refused - identifier rejected
+    3: Refused - server unavailable
+    4: Refused - bad user name or password (MQTT v3.1 broker only)
+    5: Refused - not authorised (MQTT v3.1 broker only)
+
+    """
+    try:
+        if result_code == 0:
+            log.info("Connected to MQTT broker. Subscribing to topics...")
+
+            if not cf.clean_session:
+                log.debug("clean_session==False; previous subscriptions for client_id '%s' remain "
+                          "active on broker.", cf.client_id)
+
+            subscribed = set()
+            for handler in topichandlers.values():
+                topic = handler.subscription
+                qos = handler.qos
+
+                if topic in subscribed:
+                    continue
+
+                log.debug("Subscribing to %s (qos=%d).", topic, qos)
+                mqttc.subscribe(topic, qos)
+                subscribed.add(topic)
+
+            if cf.lwt is not None:
+                mqttc.publish(cf.lwt, LWTALIVE, qos=0, retain=True)
+        elif result_code == 1:
+            log.error("Connection refused - unacceptable protocol version.")
+        elif result_code == 2:
+            log.error("Connection refused - identifier rejected.")
+        elif result_code == 3:
+            log.error("Connection refused - server unavailable.")
+        elif result_code == 4:
+            log.error("Connection refused - bad user name or password.")
+        elif result_code == 5:
+            log.error("Connection refused - not authorised.")
+        else:
+            log.error("Connection failed - result code %d.", result_code)
+    except Exception as exc:
+        log.exception("Error in 'on_connect' callback: %s", exc)
+        cleanup(1)
+
+
+def on_disconnect(mosq, userdata, result_code):
+    """Handle disconnections from the broker."""
+    try:
+        if result_code == 0:
+            log.info("Clean disconnection from broker.")
+        else:
+            send_failover("brokerdisconnected",
+                          "Broker connection lost. Will attempt to reconnect in 5s...")
+            time.sleep(5)
+    except Exception as exc:
+        log.exception("Error in 'on_disconnect' callback: %s", exc)
+
+
+def on_message(mosq, userdata, msg):
+    """Handle message received from the broker."""
+    try:
+        log.debug("Message received on topic '%s': %r", msg.topic, msg.payload)
+        msg = MQTTMessageWrapper(msg)
+
+        if msg.retain == 1:
+            if cf.skipretained:
+                log.debug("Skipping retained message on topic '%s'.", msg.topic)
+                return
+
+        log.debug("Checking handlers...")
+        handlers = match_topic_handlers(msg.topic)
+        log.debug("Matching handlers: %r", handlers)
+
+        for handler in handlers:
+            # Check for any message filters
+            if handler.filter(msg):
+                log.debug("Filter in section [%s] has skipped message on topic '%s'.",
+                          handler.section, msg.topic)
+                continue
+
+            # Send the message to any targets specified
+            log.debug("Passing message on topic '%s' to handler [%s].", msg.topic, handler.section)
+            send_to_targets(handler, msg)
+    except Exception as exc:
+        log.exception("Error in 'on_message' callback: %s", exc)
+
+
+# End of MQTT broker callbacks
+
+
 def make_service(mqttc=None, name=None):
     """Service object factory.
 
@@ -251,110 +351,32 @@ def make_service(mqttc=None, name=None):
     return service
 
 
+@lru_cache()
+def match_topic_handlers(topic):
+    """Return list of matching handlers for given topic."""
+    handlers = []
+    for subscription, handler in topichandlers.items():
+        if paho.topic_matches_sub(subscription, topic):
+            log.debug("Section [%s] matches message on topic '%s'.", handler.section, topic)
+            handlers.append(handler)
+
+    return handlers
+
+
 def render_template(filename, data):
     if HAVE_JINJA:
         template = jenv.get_template(filename)
         return template.render(data)
 
 
-# MQTT broker callbacks
-def on_connect(mosq, userdata, flags, result_code):
-    """Handle connections (or failures) to the broker.
-
-    This is called after the client has received a CONNACK message
-    from the broker in response to calling connect().
-
-    The result_code is one of:
-    0: Success
-    1: Refused - unacceptable protocol version
-    2: Refused - identifier rejected
-    3: Refused - server unavailable
-    4: Refused - bad user name or password (MQTT v3.1 broker only)
-    5: Refused - not authorised (MQTT v3.1 broker only)
-
-    """
-    if result_code == 0:
-        logger.debug("Connected to MQTT broker, subscribing to topics...")
-
-        if not cf.clean_session:
-            logger.debug("clean_session==False; previous subscriptions for client_id '%s' remain "
-                         "active on broker", cf.client_id)
-
-        subscribed = set()
-        for handler in topichandlers.values():
-            topic = handler.subscription
-            qos = handler.qos
-
-            if topic in subscribed:
-                continue
-
-            logger.debug("Subscribing to %s (qos=%d)", topic, qos)
-            mqttc.subscribe(topic, qos)
-            subscribed.add(topic)
-
-        if cf.lwt is not None:
-            mqttc.publish(cf.lwt, LWTALIVE, qos=0, retain=True)
-    elif result_code == 1:
-        logger.info("Connection refused - unacceptable protocol version")
-    elif result_code == 2:
-        logger.info("Connection refused - identifier rejected")
-    elif result_code == 3:
-        logger.info("Connection refused - server unavailable")
-    elif result_code == 4:
-        logger.info("Connection refused - bad user name or password")
-    elif result_code == 5:
-        logger.info("Connection refused - not authorised")
-    else:
-        logger.warning("Connection failed - result code %d", result_code)
-
-
-def on_disconnect(mosq, userdata, result_code):
-    """Handle disconnections from the broker."""
-    if result_code == 0:
-        logger.info("Clean disconnection from broker")
-    else:
-        send_failover("brokerdisconnected",
-                      "Broker connection lost. Will attempt to reconnect in 5s...")
-        time.sleep(5)
-
-
-@lru_cache()
-def match_topic_handlers(topic):
-    for handler in topichandlers.values():
-        if paho.topic_matches_sub(handler.subscription, topic):
-            logger.debug("Section [%s] matches message on %s.", handler.section, topic)
-            yield handler
-
-
-def on_message(mosq, userdata, msg):
-    """Handle message received from the broker."""
-    logger.debug("Message received on %s: %r", msg.topic, msg.payload)
-    msg = MQTTMessageWrapper(msg)
-
-    if msg.retain == 1:
-        if cf.skipretained:
-            logger.debug("Skipping retained message on %s", msg.topic)
-            return
-
-    # Try to find matching handler for this topic
-    for handler in match_topic_handlers(msg.topic):
-        # Check for any message filters
-        if handler.filter(msg):
-            logger.debug("Filter in section [%s] has skipped message on topic '%s'",
-                         handler.section, msg.topic)
-            continue
-
-        # Send the message to any targets specified
-        send_to_targets(handler, msg)
-
-# End of MQTT broker callbacks
-
-
 def send_failover(reason, message):
     # Make sure we dump this event to the log
     log.warn(message)
     # Attempt to send the message to our failover targets
-    send_to_targets('failover', reason, message)
+    if 'failover' in topichandlers:
+        # create fake MQTTMessage
+        msg = MQTTMessageWrapper(msg=Struct(topic=reason, payload=message))
+        send_to_targets(topichandlers['failover'], msg)
 
 
 def send_to_targets(handler, msg):
@@ -705,11 +727,11 @@ def connect():
 
         if not exit_flag:
             log.warning("MQTT server disconnected, trying to reconnect every %s seconds.",
-                           reconnect_interval)
+                        reconnect_interval)
             time.sleep(reconnect_interval)
 
 
-def cleanup(signum=None, frame=None):
+def cleanup(retcode=0, frame=None):
     """Signal handler to ensure we disconnect cleanly in the event of a SIGTERM or SIGINT."""
     for ptname in ptlist:
         log.debug("Cancelling %s timer...", ptname)
