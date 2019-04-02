@@ -178,7 +178,8 @@ setup(
     entry_points={
         'console_scripts': [
             'mqttwarn = mqttwarn.commands:run',
-            'mqtt-publish = mqttwarn.scripts.mqtt_publish:main',
+            'mqtt-pub = mqttwarn.scripts.mqtt_pub:main',
+            'mqtt-sub = mqttwarn.scripts.mqtt_sub:main',
         ],
     },
 )

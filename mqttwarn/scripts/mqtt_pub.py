@@ -7,18 +7,13 @@ __author__ = "Christopher Arndt <info@chrisarndt.de>"
 __copyright__ = "Copyright 2019 Christopher Arndt"
 __license__ = "MIT License"
 
-import getpass
 import logging
-import ssl
 import sys
 from os.path import expanduser, join
 
-from paho.mqtt.client import Client as MQTTClient, MQTTv31, MQTTv311
+from paho.mqtt.client import Client as MQTTClient
 
-try:
-    import keyring
-except ImportError:
-    keyring = None
+from .common import HAVE_KEYRING, MQTT_PROTOCOLS, TLS_VERSIONS, handle_authentication
 
 try:
     import configargparse as argparse
@@ -30,24 +25,16 @@ except ImportError:
 try:
     import appdirs
 except ImportError:
-    CONFIG_DIR = expanduser('~/.config/mqtt-publish')
+    CONFIG_DIR = expanduser('~/.config/mqtt-tools')
 else:
-    CONFIG_DIR = appdirs.AppDirs('mqtt-publish').user_config_dir
+    CONFIG_DIR = appdirs.AppDirs('mqtt-tools').user_config_dir
 
-CONFIG_FILE = join(CONFIG_DIR, 'mqtt-publish.conf')
+
+CONFIG_FILE = join(CONFIG_DIR, 'mqtt-pub.conf')
 CA_CERTFILE = join(CONFIG_DIR, 'ca.crt')
-MQTT_CLIENT_ID = 'mqtt-publish'
-MQTT_PROTOCOLS = {
-    'mqttv311': MQTTv31,
-    'tlsv1.1': MQTTv311,
-}
-TLS_VERSIONS = {
-    'tlsv1': ssl.PROTOCOL_TLSv1,
-    'tlsv1.1': ssl.PROTOCOL_TLSv1_1,
-    'tlsv1.2': ssl.PROTOCOL_TLSv1_2
-}
+MQTT_CLIENT_ID = 'mqtt-pub'
 
-log = logging.getLogger('mqtt-publish')
+log = logging.getLogger('mqtt-pub')
 
 
 class OneShotMQTTClient(MQTTClient):
@@ -102,43 +89,15 @@ class OneShotMQTTClient(MQTTClient):
             self.disconnect()
 
 
-def handle_authentication(args):
-    if not args.password:
-        service_name = 'mqtt:{}:{}'.format(args.host, args.port)
-
-        if keyring:
-            args.password = keyring.get_password(service_name, args.username)
-
-        if not args.password:
-            prompt = "Enter password for user '{}' on MQTT broker {}:{}': ".format(
-                args.username, args.host, args.port)
-            try:
-                args.password = getpass.getpass(prompt)
-            except (EOFError, KeyboardInterrupt):
-                print('')
-                return 2
-
-            if keyring and args.password:
-                try:
-                    res = input("Store password for user '{}' on '{}' in keyring? [Y/n] ".format(
-                        args.username, service_name))
-                except (EOFError, KeyboardInterrupt):
-                    print('')
-                    return 2
-                else:
-                    if res.strip().lower() in ('y', ''):
-                        keyring.set_password(service_name, args.username, args.password)
-
-
 def main(args=None):
     if HAVE_CONFIGARGPARSE:
-        ap = argparse.ArgumentParser(prog='mqtt-publish', description=__doc__ + '\n\n',
+        ap = argparse.ArgumentParser(prog='mqtt-pub', description=__doc__ + '\n\n',
                                      add_help=False, default_config_files=[CONFIG_FILE],
                                      formatter_class=argparse.RawTextHelpFormatter)
         ap.add_argument('-c', '--config', is_config_file=True, metavar='PATH',
                         help='Config file path')
     else:
-        ap = argparse.ArgumentParser(prog='mqtt-publish', description=__doc__,
+        ap = argparse.ArgumentParser(prog='mqtt-pub', description=__doc__,
                                      add_help=False, formatter_class=argparse.RawTextHelpFormatter)
 
     ap.add_argument('-h', '--help', action="help", help="Show help message")
@@ -157,7 +116,7 @@ def main(args=None):
     ap.add_argument('-u', '--username', help="MQTT broker user name")
 
     password_help = "MQTT broker password"
-    if keyring:
+    if HAVE_KEYRING:
         password_help += " (can be retrieved from / stored in keyring)"
 
     ap.add_argument('-P', '--password', help=password_help)
