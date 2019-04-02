@@ -106,6 +106,11 @@ extras = {
     'xmpp': [
         'xmpppy>=0.5.0rc1',
     ],
+    'scripts': [
+        'appdirs>=1.4.0',
+        'keyring>=19.0.0',
+        'ConfigArgParse>=0.14.0'
+    ]
 }
 
 setup(
@@ -173,6 +178,7 @@ setup(
     entry_points={
         'console_scripts': [
             'mqttwarn = mqttwarn.commands:run',
+            'mqtt-publish = mqttwarn.scripts.mqtt_publish:main',
         ],
     },
 )
