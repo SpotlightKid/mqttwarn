@@ -3,6 +3,7 @@
 """Common code for mqtt-tools command line scripts."""
 
 import getpass
+import os
 import ssl
 
 from paho.mqtt.client import MQTTv31, MQTTv311
@@ -23,6 +24,10 @@ TLS_VERSIONS = {
     'tlsv1.1': ssl.PROTOCOL_TLSv1_1,
     'tlsv1.2': ssl.PROTOCOL_TLSv1_2
 }
+
+
+def get_client_id(prefix):
+    return '{}-{}-{}'.format(prefix, getpass.getuser(), os.getpid())
 
 
 def handle_authentication(args):

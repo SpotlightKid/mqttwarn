@@ -13,7 +13,8 @@ from os.path import expanduser, join
 
 from paho.mqtt.client import Client as MQTTClient
 
-from .common import HAVE_KEYRING, MQTT_PROTOCOLS, TLS_VERSIONS, handle_authentication
+from .common import (HAVE_KEYRING, MQTT_PROTOCOLS, TLS_VERSIONS, get_client_id,
+                     handle_authentication)
 
 try:
     import configargparse as argparse
@@ -103,8 +104,8 @@ def main(args=None):
     ap.add_argument('-h', '--help', action="help", help="Show help message")
     ap.add_argument('-v', '--verbose', action="store_true",
                     help="Enable debug logging")
-    ap.add_argument('-i', '--client-id', default=MQTT_CLIENT_ID, metavar="ID",
-                    help="MQTT client ID (default: %(default)r)")
+    ap.add_argument('-i', '--client-id', default=get_client_id(MQTT_CLIENT_ID), metavar="ID",
+                    help="MQTT client ID (default: %s-<user>-<pid>)" % MQTT_CLIENT_ID)
     ap.add_argument('-H', '--host', default='localhost',
                     help="MQTT broker server name or address (default: %(default)r)")
     ap.add_argument('-p', '--port', type=int,
