@@ -13,9 +13,9 @@ except ImportError:
     HAVE_CELERY=False
 
 def plugin(srv, item):
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
     if not HAVE_CELERY:
-        srv.logging.error("'celery' or 'json' module not installed")
+        srv.log.error("'celery' or 'json' module not installed")
         return False
 
     config = item.config
@@ -31,8 +31,8 @@ def plugin(srv, item):
             if target['message_format'] == 'json':
                 message = json.loads(message)
             app.send_task(target['task'], [item.message])
-        except Exception, e:
-            srv.logging.warning("Error: %s" % str(e))
+        except Exception as exc:
+            srv.log.warning("Error: %s" % exc)
             return False
 
     return True

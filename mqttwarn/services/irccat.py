@@ -9,12 +9,12 @@ import socket
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     try:
         addr, port, channel = item.addrs
     except:
-        srv.logging.warn("Incorrect target configuration")
+        srv.log.warn("Incorrect target configuration")
         return False
 
     message  = item.message
@@ -34,8 +34,8 @@ def plugin(srv, item):
         sock.send(message)
         sock.close()
 
-    except Exception, e:
-        srv.logging.error("Error sending IRCCAT notification to %s:%s [%s]: %s" % (item.target, addr, port, str(e)))
+    except Exception as exc:
+        srv.log.error("Error sending IRCCAT notification to %s:%s [%s]: %s" % (item.target, addr, port, exc))
         return False
 
     return True

@@ -15,7 +15,7 @@ except ImportError:
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     if HAVE_DNS == False:
         return False
@@ -29,7 +29,7 @@ def plugin(srv, item):
     try:
         zone, domain, ttl, rrtype = item.addrs
     except:
-        srv.logging.error("Incorrect target configuration for {0}/{1}".format(item.service, item.target))
+        srv.log.error("Incorrect target configuration for {0}/{1}".format(item.service, item.target))
         return False
 
     text = item.message
@@ -48,9 +48,9 @@ def plugin(srv, item):
         update.replace(domain, ttl, rrtype, text)
         response = dns.query.tcp(update, dns_nameserver, timeout=10)
 
-        srv.logging.debug("DNS Update: {0}".format(dns.rcode.to_text(response.rcode())))
-    except Exception, e:
-        srv.logging.warning("Cannot notify to dnsupdate `%s': %s" % (dns_nameserver, str(e)))
+        srv.log.debug("DNS Update: {0}".format(dns.rcode.to_text(response.rcode())))
+    except Exception as exc:
+        srv.log.warning("Cannot notify to dnsupdate `%s': %s" % (dns_nameserver, exc))
         return False
 
     return True

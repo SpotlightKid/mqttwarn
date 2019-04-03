@@ -19,10 +19,10 @@ except ImportError:
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     if HAVE_REQUESTS == False:
-        srv.logging.error("Missing module: requests")
+        srv.log.error("Missing module: requests")
         return False
 
     host          = item.config['host']
@@ -82,10 +82,10 @@ def plugin(srv, item):
         url = "%s:%d/v1/actions/process-check-result" % (host, port)
         r = requests.post(url, **kwargs)
         if r.status_code != requests.codes.ok:
-            srv.logging.warning("Invalid response from icinga2 REST API at `%s`: %s" % (host, r.text))
+            srv.log.warning("Invalid response from icinga2 REST API at `%s`: %s" % (host, r.text))
             return False
-    except Exception, e:
-        srv.logging.warning("Failed to POST request to icinga2 REST API at `%s': %s" % (host, str(e)))
+    except Exception as exc:
+        srv.log.warning("Failed to POST request to icinga2 REST API at `%s': %s" % (host, exc))
         return False
 
     return True

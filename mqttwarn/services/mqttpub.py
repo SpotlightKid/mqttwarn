@@ -1,38 +1,40 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__author__    = 'Jan-Piet Mens <jpmens()gmail.com>'
-__copyright__ = 'Copyright 2014 Jan-Piet Mens'
-__license__   = """Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-v10.html)"""
+__author__ = "Jan-Piet Mens <jpmens()gmail.com>"
+__copyright__ = "Copyright 2014 Jan-Piet Mens"
+__license__ = "Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-v10.html)"
+
+import six
+
 
 def plugin(srv, item):
-    ''' Publish via MQTT to the same broker connection.
-        Requires topic, qos and retain flag '''
+    """Publish via MQTT to the same broker connection.
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    Requires topic, qos and retain flag to be specified in target address.
 
-    outgoing_topic =  item.addrs[0]
-    qos  =  item.addrs[1]
-    retain = item.addrs[2]
+    """
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
-    # Attempt to interpolate data into topic name. If it isn't possible
-    # ignore, and return without publish
+    outgoing_topic, qos, retain = item.addrs[:3]
 
+    # Attempt to interpolate data into topic name.
+    # If it isn't possible ignore messsage, and return without publishing.
     if item.data is not None:
         try:
-            outgoing_topic =  item.addrs[0].format(**item.data).encode('utf-8')
+            outgoing_topic = outgoing_topic.format(**item.data)
         except:
-            srv.logging.debug("Outgoing topic cannot be formatted; not published")
+            srv.log.debug("Outgoing topic cannot be formatted; not published.")
             return False
 
     outgoing_payload = item.message
-    if type(outgoing_payload) == unicode:
-        outgoing_payload = bytearray(outgoing_payload, encoding='utf-8')
+    if isinstance(outgoing_payload, six.string_types):
+        outgoing_payload = outgoing_payload.encode('utf-8')
 
     try:
         srv.mqttc.publish(outgoing_topic, outgoing_payload, qos=qos, retain=retain)
-    except Exception, e:
-        srv.logging.warning("Cannot PUBlish via `mqttpub:%s': %s" % (item.target, str(e)))
+    except Exception as exc:
+        srv.log.warning("Cannot PUBlish via 'mqttpub:%s': %s", item.target, exc)
         return False
 
     return True

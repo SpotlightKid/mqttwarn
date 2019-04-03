@@ -7,14 +7,13 @@ __license__   = """Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/
 
 import serial
 
+
 _serialport = None
+
 
 def plugin(srv, item):
     global _serialport
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
-
-    # item.config is brought in from the configuration file
-    config   = item.config
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     # addrs is a list[] associated with a particular target.
     # While it may contain more than one item (e.g. pushover)
@@ -22,8 +21,9 @@ def plugin(srv, item):
     try:
         comName = item.addrs[0].format(**item.data).encode('utf-8')
         comBaudRate = int(item.addrs[1])
-    except:
-        srv.logging.error("Incorrect target configuration for {0}/{1}".format(item.service, item.target))
+    except Exception as exc:
+        srv.log.error("Incorrect target configuration for '%s:%s': %s",
+                      item.service, item.target, exc)
         return False
 
     # If the incoming payload has been transformed, use that,
@@ -37,7 +37,7 @@ def plugin(srv, item):
         text = bytes(bytearray.fromhex(text[5:]))
 
     # Append newline if config option is set
-    if type(config) == dict and 'append_newline' in config and config['append_newline']:
+    if item.config.get('append_newline', False):
         text = text + "\n"
 
     try:
@@ -46,18 +46,16 @@ def plugin(srv, item):
                 _serialport.is_open
             else:
                 _serialport.isOpen
-            srv.logging.debug("%s already open", comName)
+            srv.log.debug("%s already open", comName)
         except:
             #Open port for first use
-            srv.logging.debug("Open %s with %d baud", comName, comBaudRate)
+            srv.log.debug("Open %s with %d baud", comName, comBaudRate)
             _serialport = serial.serial_for_url(comName)
-            _serialport.baudrate = comBaudRate 
+            _serialport.baudrate = comBaudRate
 
         _serialport.write(text)
-
-    except SerialException, e:
-        srv.logging.warning("Cannot write to com port `%s': %s" % (comName, str(e)))
+    except serial.SerialException as exc:
+        srv.log.warning("Cannot write to com port '%s': %s", comName, exc)
         return False
 
     return True
-

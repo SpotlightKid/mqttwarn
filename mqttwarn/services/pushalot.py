@@ -10,7 +10,7 @@ from ssl import SSLError
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     apikey = item.addrs[0]
 
@@ -30,11 +30,11 @@ def plugin(srv, item):
                          body=urlencode(data)
                          )
     except (SSLError, HTTPException), e:
-        srv.logging.warn("Pushalot notification failed: %s" % str(e))
+        srv.log.warn("Pushalot notification failed: %s" % exc)
         return False            
 
     response = http_handler.getresponse()
 
-    srv.logging.debug("Reponse: %s, %s" % (response.status, response.reason))
+    srv.log.debug("Reponse: %s, %s" % (response.status, response.reason))
 
     return True 

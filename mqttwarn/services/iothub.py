@@ -20,8 +20,8 @@ def iothub_connect(srv, item, deviceid, devicekey):
     # item.config is brought in from the configuration file
     try:
         hostname = item.config['hostname']
-    except Exception, e:
-        srv.logging.error("Incorrect target configuration for target=%s: %s", item.target, str(e))
+    except Exception as exc:
+        srv.log.error("Incorrect target configuration for target=%s: %s", item.target, exc)
         return False
     protocol = item.config.get('protocol', 'AMQP')
     timeout = item.config.get('timeout')
@@ -39,20 +39,20 @@ def iothub_connect(srv, item, deviceid, devicekey):
             client.set_option("MinimumPollingTime", minimum_polling_time)
     if message_timeout is not None:
         client.set_option("messageTimeout", message_timeout)
-    srv.logging.info("Client: protocol=%s, hostname=%s, device=%s" % (protocol, hostname, deviceid))
+    srv.log.info("Client: protocol=%s, hostname=%s, device=%s" % (protocol, hostname, deviceid))
     return client
 
 def iothub_send_confirmation_callback(msg, res, srv):
     if res != IoTHubClientConfirmationResult.OK:
-        srv.logging.error("Message confirmation: id=%s: %s", msg.message_id, res)
+        srv.log.error("Message confirmation: id=%s: %s", msg.message_id, res)
     else:
-        srv.logging.debug("Message confirmation: id=%s: %s", msg.message_id, res)
+        srv.log.debug("Message confirmation: id=%s: %s", msg.message_id, res)
 
 def plugin(srv, item):
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     if not HAVE_IOTHUB:
-        srv.logging.error("Azure IoT SDK is not installed")
+        srv.log.error("Azure IoT SDK is not installed")
         return False
 
     # addrs is a list[] containing device id and key.
@@ -63,8 +63,8 @@ def plugin(srv, item):
         if not deviceid in iothub_clients:
             iothub_clients[deviceid] = iothub_connect(srv, item, deviceid, devicekey)
         client = iothub_clients[deviceid]
-    except Exception, e:
-        srv.logging.error("Unable to connect for target=%s, deviceid=%s: %s" % (item.target, deviceid, str(e)))
+    except Exception as exc:
+        srv.log.error("Unable to connect for target=%s, deviceid=%s: %s" % (item.target, deviceid, exc))
         return False
 
     # Prepare message
@@ -74,16 +74,16 @@ def plugin(srv, item):
         else:
             msg = IoTHubMessage(item.message)
         msg.message_id = str("%s:%s" % (item.target, uuid.uuid4().hex))
-    except Exception, e:
-        srv.logging.error("Unable to prepare message for target=%s: %s" % (item.target, str(e)))
+    except Exception as exc:
+        srv.log.error("Unable to prepare message for target=%s: %s" % (item.target, exc))
         return False
 
     # Send
     try:
         client.send_event_async(msg, iothub_send_confirmation_callback, srv)
-        srv.logging.debug("Message queued: id=%s", msg.message_id)
-    except Exception, e:
-        srv.logging.error("Unable to send to IoT Hub for target=%s: %s" % (item.target, str(e)))
+        srv.log.debug("Message queued: id=%s", msg.message_id)
+    except Exception as exc:
+        srv.log.error("Unable to send to IoT Hub for target=%s: %s" % (item.target, exc))
         return False
 
     return True

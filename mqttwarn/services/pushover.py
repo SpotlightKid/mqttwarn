@@ -55,7 +55,7 @@ def plugin(srv, item):
     # optional callback URL
     callback = item.config.get('callback', None)
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     # addrs is an array with two or three elements:
     # 0 is the user key
@@ -66,7 +66,7 @@ def plugin(srv, item):
         userkey = addrs[0]
         appkey  = addrs[1]
     except:
-        srv.logging.warn("No pushover userkey/appkey configured for target `%s'" % (item.target))
+        srv.log.warn("No pushover userkey/appkey configured for target `%s'" % (item.target))
         return False
 
     params = {
@@ -97,19 +97,19 @@ def plugin(srv, item):
     image = None
     if 'imageurl' in item.data:
         imageurl = item.data['imageurl']
-        srv.logging.debug("Image url detected - %s" % imageurl)
+        srv.log.debug("Image url detected - %s" % imageurl)
         image = requests.get(imageurl, stream=True).raw
     elif 'imagebase64' in item.data:
         imagebase64 = item.data['imagebase64']
-        srv.logging.debug("Image (base64 encoded) detected")
+        srv.log.debug("Image (base64 encoded) detected")
         image = base64.decodestring(imagebase64)
 
     try:
-        srv.logging.debug("Sending pushover notification to %s [%s]...." % (item.target, params))
+        srv.log.debug("Sending pushover notification to %s [%s]...." % (item.target, params))
         pushover(image=image, user=userkey, token=appkey, **params)
-        srv.logging.debug("Successfully sent pushover notification")
-    except Exception, e:
-        srv.logging.warn("Error sending pushover notification: %s" % (str(e)))
+        srv.log.debug("Successfully sent pushover notification")
+    except Exception as exc:
+        srv.log.warn("Error sending pushover notification: %s", exc)
         return False
 
     return True

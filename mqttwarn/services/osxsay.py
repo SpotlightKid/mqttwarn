@@ -9,7 +9,7 @@ import subprocess
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     voice = item.addrs[0]
     text = item.message
@@ -19,17 +19,17 @@ def plugin(srv, item):
     try:
         proc = subprocess.Popen(argv,
             stdin=subprocess.PIPE, close_fds=True)
-    except Exception, e:
-        srv.logging.warn("Cannot create osxsay pipe: %s" % str(e))
+    except Exception as exc:
+        srv.log.warn("Cannot create osxsay pipe: %s" % exc)
         return False
 
     try:
         proc.stdin.write(text)
     except IOError as e:
-        srv.logging.warn("Cannot write to osxsay pipe: errno %d" % (e.errno))
+        srv.log.warn("Cannot write to osxsay pipe: errno %d" % (e.errno))
         return False
-    except Exception, e:
-        srv.logging.warn("Cannot write to osxsay pipe: %s" % (str(e)))
+    except Exception as exc:
+        srv.log.warn("Cannot write to osxsay pipe: %s", exc)
         return False
 
     proc.stdin.close()

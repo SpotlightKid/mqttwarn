@@ -10,7 +10,7 @@ import syslog
 def plugin(srv, item):
     """Transfer a message to a syslog server."""
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s",
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s",
                         __file__, item.service, item.target)
 
     facilities = {
@@ -61,14 +61,14 @@ def plugin(srv, item):
     message = item.message
 
     try:
-        srv.logging.debug("Message is going to syslog facility %s..." \
+        srv.log.debug("Message is going to syslog facility %s..." \
             % ((item.target).upper()))
         syslog.openlog(title, option, facility)
         syslog.syslog(priority, message)
-        srv.logging.debug("Successfully sent")
+        srv.log.debug("Successfully sent")
         syslog.closelog()
-    except Exception, e:
-        srv.logging.error("Error sending to syslog: %s" % (str(e)))
+    except Exception as exc:
+        srv.log.error("Error sending to syslog: %s", exc)
         syslog.closelog()
         return False
 

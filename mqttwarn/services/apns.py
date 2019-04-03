@@ -15,18 +15,18 @@ def plugin(srv, item):
     data    = item.data
     text    = item.message
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     print item
 
     try:
         cert_file, key_file = addrs
     except:
-        srv.logging.warn("Incorrect service configuration")
+        srv.log.warn("Incorrect service configuration")
         return False
 
     if 'payload' not in data or 'apns_token' not in data:
-        srv.logging.warn("Cannot notify via APNS: payload or apns_token are missing")
+        srv.log.warn("Cannot notify via APNS: payload or apns_token are missing")
         return False
 
     apns_token = data['apns_token']

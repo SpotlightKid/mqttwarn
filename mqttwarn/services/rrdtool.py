@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import re
 import rrdtool
 
-__author__    = 'devsaurus <devsaurus@users.noreply.github.com>'
-__copyright__ = 'Copyright 2015'
-__license__   = """Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-v10.html)"""
+
+__author__ = "devsaurus <devsaurus@users.noreply.github.com>"
+__copyright__ = "Copyright 2015"
+__license__  = "Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-v10.html)"
+
 
 def plugin(srv, item):
-
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     # If the incoming payload has been transformed, use that,
     # else the original payload
@@ -22,12 +24,12 @@ def plugin(srv, item):
         # mofified by otfdr @ github to accept abitray arguments with
         # the payload and to not always add the 'N' in front
         # 2017-06-05 - fix/enhancement for https://github.com/jpmens/mqttwarn/issues/248
-        if re.match( "^\d+$", text ):
-                rrdtool.update(item.addrs, "N:" + text)
+        if re.match(r"^\d+$", text):
+            rrdtool.update(item.addrs, "N:" + text)
         else:
-                rrdtool.update(item.addrs + text.split())
-    except Exception, e:
-        srv.logging.warning("Cannot call rrdtool")
+            rrdtool.update(item.addrs + text.split())
+    except Exception as exc:
+        srv.log.warning("Cannot call rrdtool: %s", exc)
         return False
 
     return True

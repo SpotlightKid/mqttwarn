@@ -10,7 +10,7 @@ import requests
 def plugin(srv, item):
     ''' expects (apikey, event) in adddrs '''
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     event_type = "device_iden"
     try:
@@ -19,19 +19,19 @@ def plugin(srv, item):
         try:
             apikey, event = item.addrs
         except:
-            srv.logging.warn("ifttt target is incorrectly configured")
+            srv.log.warn("ifttt target is incorrectly configured")
             return False
 
     payload = {}
     payload["value1"] = item.message
 
     try:
-        srv.logging.debug("Sending ifttt event")
+        srv.log.debug("Sending ifttt event")
         url = "https://maker.ifttt.com/trigger/" + event + "/with/key/" + apikey
         requests.post(url, data=payload)
-        srv.logging.debug("Successfully sent ifttt event")
-    except Exception, e:
-        srv.logging.warning("Cannot send ifttt event: %s" % (str(e)))
+        srv.log.debug("Successfully sent ifttt event")
+    except Exception as exc:
+        srv.log.warning("Cannot send ifttt event: %s", exc)
         return False
 
     return True

@@ -14,7 +14,7 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 def plugin(srv, item):
     ''' addrs: (measurement) '''
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     host        = item.config['host']
     port        = item.config['port']
@@ -41,11 +41,11 @@ def plugin(srv, item):
             
         # request accepted but couldn't be completed (200) or failed (otherwise)
         if r.status_code == 200:
-            srv.logging.warn("POST request could not be completed: %s" % (r.text))
+            srv.log.warn("POST request could not be completed: %s" % (r.text))
         else:
-            srv.logging.warn("POST request failed: (%s) %s" % (r.status_code, r.text))
+            srv.log.warn("POST request failed: (%s) %s" % (r.status_code, r.text))
         
-    except Exception, e:
-        srv.logging.warn("Failed to send POST request to InfluxDB server using %s: %s" % (url, str(e)))
+    except Exception as exc:
+        srv.log.warn("Failed to send POST request to InfluxDB server using %s: %s" % (url, exc))
 
     return False

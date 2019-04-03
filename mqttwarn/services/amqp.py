@@ -14,10 +14,10 @@ except ImportError:
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     if not HAVE_PUKA:
-        srv.logging.error("Python puka is not installed")
+        srv.log.error("Python puka is not installed")
         return False
 
     uri         = item.config['uri']
@@ -25,7 +25,7 @@ def plugin(srv, item):
     exchange, routing_key = item.addrs
 
     try:
-        srv.logging.debug("AMQP publish to %s [%s/%s]..." % (item.target, exchange, routing_key))
+        srv.log.debug("AMQP publish to %s [%s/%s]..." % (item.target, exchange, routing_key))
 
         client = puka.Client(uri)
         promise = client.connect()
@@ -43,9 +43,9 @@ def plugin(srv, item):
         client.wait(promise)
         client.close()
 
-        srv.logging.debug("Successfully published AMQP notification")
-    except Exception, e:
-        srv.logging.warn("Error on AMQP publish to %s [%s/%s]: %s" % (item.target, exchange, routing_key, str(e)))
+        srv.log.debug("Successfully published AMQP notification")
+    except Exception as exc:
+        srv.log.warn("Error on AMQP publish to %s [%s/%s]: %s" % (item.target, exchange, routing_key, exc))
         return False
 
     return True

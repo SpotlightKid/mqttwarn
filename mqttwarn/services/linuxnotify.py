@@ -10,23 +10,23 @@ from gi.repository import Notify
 def plugin(srv, item):
     """Send a message to the user's desktop notification system."""
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__,
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__,
             item.service, item.target)
 
     title = item.addrs[0]
     text = item.message
 
     try:
-        srv.logging.debug("Sending notification to the user's desktop")
+        srv.log.debug("Sending notification to the user's desktop")
         Notify.init('mqttwarn')
         n = Notify.Notification.new(
             title,
             text,
             '/usr/share/icons/gnome/32x32/places/network-server.png')
         n.show()
-        srv.logging.debug("Successfully sent notification")
-    except Exception, e:
-        srv.logging.warning("Cannot invoke notification to linux: %s" % (str(e)))
+        srv.log.debug("Successfully sent notification")
+    except Exception as exc:
+        srv.log.warning("Cannot invoke notification to linux: %s", exc)
         return False
 
     return True

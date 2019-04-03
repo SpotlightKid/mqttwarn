@@ -15,7 +15,7 @@ except ImportError:
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     xbmchost = item.addrs[0]
     xbmcusername = None
@@ -44,7 +44,7 @@ def plugin(srv, item):
 
     url = 'http://%s/jsonrpc' % (xbmchost)
     try:
-        srv.logging.debug("Sending XBMC notification to %s [%s]..." % (item.target, xbmchost))
+        srv.log.debug("Sending XBMC notification to %s [%s]..." % (item.target, xbmchost))
         req = urllib2.Request(url, jsoncommand)
         req.add_header("Content-type", "application/json")
         if xbmcpassword is not None:
@@ -52,12 +52,12 @@ def plugin(srv, item):
             authheader = "Basic %s" % base64string
             req.add_header("Authorization", authheader)
         response = urllib2.urlopen(req, timeout = 2)
-        srv.logging.debug("Successfully sent XBMC notification")
+        srv.log.debug("Successfully sent XBMC notification")
     except urllib2.URLError, e:
-        srv.logging.error("URLError: %s" % (str(e)))
+        srv.log.error("URLError: %s", exc)
         return False
-    except Exception, e:
-        srv.logging.error("Error sending XBMC notification to %s [%s]: %s" % (item.target, xbmchost, str(e)))
+    except Exception as exc:
+        srv.log.error("Error sending XBMC notification to %s [%s]: %s" % (item.target, xbmchost, exc))
         return False
 
     return True

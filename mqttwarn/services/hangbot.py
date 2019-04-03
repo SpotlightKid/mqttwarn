@@ -20,7 +20,7 @@ import requests
 def plugin(srv, item):
     ''' expects (url,port,apikey, convid) in addrs '''
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     payload = {
         'key': item.addrs[2],
@@ -28,13 +28,13 @@ def plugin(srv, item):
         'content': item.message
     }
     try:
-        srv.logging.debug("Sending to hangoutsbot")
+        srv.log.debug("Sending to hangoutsbot")
         url = "https://" + item.addrs[0] + ":" + item.addrs[1]
         headers = {'content-type': 'application/json'}
         requests.post(url, data = json.dumps(payload), headers = headers, verify=False)
-        srv.logging.debug("Successfully sent to hangoutsbot")
-    except Exception, e:
-        srv.logging.warning("Failed to send message to hangoutsbot" % (str(e)))
+        srv.log.debug("Successfully sent to hangoutsbot")
+    except Exception as exc:
+        srv.log.warning("Failed to send message to hangoutsbot", exc)
         return False
 
     return True

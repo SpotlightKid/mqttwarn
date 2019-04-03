@@ -16,7 +16,7 @@ except ImportError:
 def plugin(srv, item):
     ''' addrs: (node, name) '''
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     url     = item.config['url']
     apikey  = item.config['apikey']
@@ -35,8 +35,8 @@ def plugin(srv, item):
 
         response = urllib2.urlopen(request, timeout=timeout)
         data = response.read()
-    except Exception, e:
-        srv.logging.warn("Failed to send GET request to EmonCMS using %s: %s" % (resource, str(e)))
+    except Exception as exc:
+        srv.log.warn("Failed to send GET request to EmonCMS using %s: %s" % (resource, exc))
         return False
 
     return True

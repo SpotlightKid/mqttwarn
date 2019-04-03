@@ -9,7 +9,7 @@ import prowlpy # from https://github.com/jacobb/prowlpy
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     apikey = item.addrs[0]
     application = item.addrs[1]
@@ -26,8 +26,8 @@ def plugin(srv, item):
             priority=priority,
             providerkey=None,
             url=None)
-    except Exception, e:
-        srv.logging.warning("Cannot prowl: %s" % (str(e)))
+    except Exception as exc:
+        srv.log.warning("Cannot prowl: %s", exc)
         return False
 
     return True

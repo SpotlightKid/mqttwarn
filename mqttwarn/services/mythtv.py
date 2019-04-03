@@ -9,7 +9,7 @@ import httplib, urllib
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     data = {'Message': item.message.encode('utf-8'),
             'Origin': item.title,
@@ -27,11 +27,11 @@ def plugin(srv, item):
                              headers={'Content-type': "application/x-www-form-urlencoded", "Accept": "text/plain"},
                              body=urllib.urlencode(data))
     except (SSLError, HTTPException), e:
-        srv.logging.warn("mythtv notification failed: %s" % str(e))
+        srv.log.warn("mythtv notification failed: %s" % exc)
         return False            
 
     response = http_handler.getresponse()
 
-    srv.logging.debug("Reponse: %s, %s" % (response.status, response.reason))
+    srv.log.debug("Reponse: %s, %s" % (response.status, response.reason))
 
     return True 

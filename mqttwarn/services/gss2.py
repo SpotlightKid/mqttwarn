@@ -25,9 +25,9 @@ SCOPE="https://spreadsheets.google.com/feeds"
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
     if not HAVE_GSS:
-        srv.logging.error("Google Spreadsheet or oauth2client is not installed. Consider 'pip install gspread google-api-python-client'.")
+        srv.log.error("Google Spreadsheet or oauth2client is not installed. Consider 'pip install gspread google-api-python-client'.")
         return False
 
     try:
@@ -36,29 +36,29 @@ def plugin(srv, item):
         client_secrets_filename = item.config['client_secrets_filename']
         oauth2_code = item.config['oauth2_code']
         oauth2_storage_filename = item.config['oauth2_storage_filename']
-    except KeyError as e:
-        srv.logging.error("Some configuration item is missing: %s" % str(e))
+    except KeyError as exc:
+        srv.log.error("Some configuration item is missing: %s", exc)
         return False
 
     if not os.path.exists(client_secrets_filename):
-        srv.logging.error(u"Cannot find file '%s'." % client_secrets)
+        srv.log.error(u"Cannot find file '%s'.", client_secrets_filename)
         return False
 
     try:
-        srv.logging.debug("Adding row to spreadsheet %s [%s]..." % (spreadsheet_url, worksheet_name))
+        srv.log.debug("Adding row to spreadsheet %s [%s]..." % (spreadsheet_url, worksheet_name))
         if os.path.isfile(oauth2_storage_filename):
             # Valid credentials from previously completed authentication?
-            srv.logging.debug(u"Trying to use credentials from file '%s'." % 
+            srv.log.debug(u"Trying to use credentials from file '%s'." %
                 oauth2_storage_filename)
             storage = oauth2client.file.Storage(oauth2_storage_filename)
             credentials = storage.get()
             if credentials is None or credentials.invalid:
-                srv.logging.error(u"Error reading credentials from file '%s'." % 
+                srv.log.error(u"Error reading credentials from file '%s'." %
                     oauth2_storage_filename)
                 return False
         elif oauth2_code is not None and len(oauth2_code) > 0:
             # After restart - hopefully with the code coming from the Google webpage.
-            srv.logging.debug(u"Trying to use client_secrets from '%s' and OAuth code '%s'." %
+            srv.log.debug(u"Trying to use client_secrets from '%s' and OAuth code '%s'." %
                 (client_secrets_filename, oauth2_code))
             try:
                 credentials = oauth2client.client.credentials_from_clientsecrets_and_code(
@@ -68,17 +68,17 @@ def plugin(srv, item):
                     redirect_uri='urn:ietf:wg:oauth:2.0:oob')
                 if credentials is None:
                     raise clientsecrets.InvalidClientSecretsError("Resulting credentials are None!?")
-            except clientsecrets.InvalidClientSecretsError as e:
-                srv.logging.error(u"Something went wrong using '%s' and OAuth code '%s': %s" %
-                    (client_secrets_filename, oauth2_code, str(e)))
+            except clientsecrets.InvalidClientSecretsError as exc:
+                srv.log.error("Something went wrong using '%s' and OAuth code '%s': %s",
+                              client_secrets_filename, oauth2_code, exc)
                 return False
-            except oauth2client.client.FlowExchangeError as e:
-                if 'invalid_grantCode' in e.message:
-                    srv.logging.error(u"It seems you need to start over: Clear the "
-                        "'oauth2_code'-field and restart mqttwarn.")
+            except oauth2client.client.FlowExchangeError as exc:
+                if 'invalid_grantCode' in exc.message:
+                    srv.log.error("It seems you need to start over: Clear the "
+                                  "'oauth2_code'-field and restart mqttwarn.")
                     return False
                 else:
-                    raise e
+                    raise exc
 
             # Store credentials for next event.
             storage = oauth2client.file.Storage(oauth2_storage_filename)
@@ -91,7 +91,7 @@ def plugin(srv, item):
                 scope=SCOPE,
                 redirect_uri='urn:ietf:wg:oauth:2.0:oob')
             auth_uri = flow.step1_get_authorize_url()
-            srv.logging.error(u'NO AUTHENTICATION AVAILABLE: Visit this URL and copy code to '
+            srv.log.error(u'NO AUTHENTICATION AVAILABLE: Visit this URL and copy code to '
                 'mqttwarn.ini -> config:gss2 -> oauth2_code: %s' % auth_uri)
             return False
 
@@ -106,10 +106,10 @@ def plugin(srv, item):
 
         wks.append_row(values)
 
-        srv.logging.debug("Successfully added row to spreadsheet")
+        srv.log.debug("Successfully added row to spreadsheet")
 
-    except Exception as e:
-        srv.logging.warn("Error adding row to spreadsheet %s [%s]: %s" % (spreadsheet_url, worksheet_name, str(e)))
+    except Exception as exc:
+        srv.log.warn("Error adding row to spreadsheet %s [%s]: %s" % (spreadsheet_url, worksheet_name, exc))
         return False
 
     return True

@@ -17,9 +17,9 @@ except ImportError:
 def plugin(srv, item):
     ''' expects (apikey, device_id) in adddrs '''
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
     if not HAVE_PUSHBULLET:
-        srv.logging.warn("pushbullet is not installed")
+        srv.log.warn("pushbullet is not installed")
         return False
 
     recipient_type = "device_iden"
@@ -29,19 +29,19 @@ def plugin(srv, item):
         try:
             apikey, device_id, recipient_type = item.addrs
         except:
-            srv.logging.warn("pushbullet target is incorrectly configured")
+            srv.log.warn("pushbullet target is incorrectly configured")
             return False
 
     text = item.message
     title = item.get('title', srv.SCRIPTNAME)
 
     try:
-        srv.logging.debug("Sending pushbullet notification to %s..." % (item.target))
+        srv.log.debug("Sending pushbullet notification to %s..." % (item.target))
         pb = PushBullet(apikey)
         pb.pushNote(device_id, title, text, recipient_type)
-        srv.logging.debug("Successfully sent pushbullet notification")
-    except Exception, e:
-        srv.logging.warning("Cannot notify pushbullet: %s" % (str(e)))
+        srv.log.debug("Successfully sent pushbullet notification")
+    except Exception as exc:
+        srv.log.warning("Cannot notify pushbullet: %s", exc)
         return False
 
     return True

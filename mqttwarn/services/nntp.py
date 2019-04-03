@@ -13,7 +13,7 @@ from email.Utils import formatdate
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     host      = item.config.get('server', 'localhost')
     port      = item.config.get('port', 119)
@@ -24,7 +24,7 @@ def plugin(srv, item):
         from_hdr = item.addrs[0]
         newsgroup = item.addrs[1]
     except Exception:
-        srv.logging.error("Incorrect target configuration for %s" % item.target)
+        srv.log.error("Incorrect target configuration for %s" % item.target)
         return False
 
     try:
@@ -44,13 +44,13 @@ def plugin(srv, item):
         msg_file = StringIO.StringIO(msg.as_string())
         nntp = nntplib.NNTP(host, port, user=username, password=password)
 
-        srv.logging.debug(nntp.getwelcome())
+        srv.log.debug(nntp.getwelcome())
         nntp.set_debuglevel(0)
 
         nntp.post(msg_file)
         nntp.quit()
-    except Exception, e:
-        srv.logging.warn("Cannot post to %s newsgroup: %s" % (newsgroup, str(e)))
+    except Exception as exc:
+        srv.log.warn("Cannot post to %s newsgroup: %s" % (newsgroup, exc))
         return False
 
     return True

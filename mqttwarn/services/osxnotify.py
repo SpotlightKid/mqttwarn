@@ -10,7 +10,7 @@ import os
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     text = item.message
     application_name = item.get('title', item.topic)
@@ -23,8 +23,8 @@ def plugin(srv, item):
 
     try:
         Notifier.notify(text,  title=application_name, open=url)
-    except Exception, e:
-        srv.logging.warning("Cannot invoke Notifier to osx: %s" % (str(e)))
+    except Exception as exc:
+        srv.log.warning("Cannot invoke Notifier to osx: %s", exc)
         return False
 
     return True

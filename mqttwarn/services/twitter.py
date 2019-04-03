@@ -9,7 +9,7 @@ import twitter                    # pip install python-twitter
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     twitter_keys = item.addrs
 
@@ -22,14 +22,14 @@ def plugin(srv, item):
 
     text = item.message[0:138]
     try:
-        srv.logging.debug("Sending tweet to %s..." % (item.target))
+        srv.log.debug("Sending tweet to %s..." % (item.target))
         res = twapi.PostUpdate(text, trim_user=False)
-        srv.logging.debug("Successfully sent tweet")
+        srv.log.debug("Successfully sent tweet")
     except twitter.TwitterError, e:
-        srv.logging.error("TwitterError: %s" % (str(e)))
+        srv.log.error("TwitterError: %s", exc)
         return False
-    except Exception, e:
-        srv.logging.error("Error sending tweet to %s: %s" % (item.target, str(e)))
+    except Exception as exc:
+        srv.log.error("Error sending tweet to %s: %s" % (item.target, exc))
         return False
 
     return True

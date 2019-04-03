@@ -1,110 +1,108 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__author__    = 'João Paulo Barraca <jpbarraca()gmail.com>'
-__copyright__ = 'Copyright 2014 João Paulo Barraca'
-__license__   = """Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-v10.html)"""
-
 # Credits to Jan-Piet Mens for the mysql.py code which served as basis for this module
 
-import MySQLdb
-import time
+__author__ = "João Paulo Barraca <jpbarraca()gmail.com>"
+__copyright__ = "Copyright 2014 João Paulo Barraca"
+__license__ = "Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-v10.html)"
+
 import re
-import traceback
+import time
+
+import MySQLdb
+import six
 
 
 def add_row(srv, cursor, index_table_name, table_name, rowdict, ignorekeys):
     keys = []
     clean_key = re.compile(r'[^\d\w_-]+')
-    for k,v in rowdict.items():
+
+    for k, v in rowdict.items():
         if k in ignorekeys:
             continue
 
         key = clean_key.sub('', k)
         keys.append({'ori': k, 'clean': key})
-    
+
     try:
         cursor.execute("describe %s" % table_name)
-    except Exception, e:
+    except Exception:
         colspec = ['`id` INT AUTO_INCREMENT']
+
         for k in keys:
-            if isinstance(rowdict[k['ori']], (int, long)):
+            if isinstance(rowdict[k['ori']], six.integer_types):
                 colspec.append('`%s` LONG' % k['clean'])
-            elif isinstance(rowdict[k['ori']], (float)):
+            elif isinstance(rowdict[k['ori']], float):
                 colspec.append('`%s` FLOAT' % k['clean'])
             else:
                 colspec.append('`%s` TEXT' % k['clean'])
 
-        query = 'create table `%s` (' % table_name
+        query = 'CREATE TABLE `%s` (' % table_name
         query += ','.join(colspec)
         query += ', PRIMARY KEY ID(`id`)) CHARSET=utf8'
 
         try:
             cursor.execute(query)
-        except Exception, e:
-            srv.logging.warn("Mysql target incorrectly configured. Could not create table %s: %s" % table_name, e)
+        except Exception as exc:
+            srv.log.warn("Mysql target incorrectly configured. Could not create table %s: %s",
+                         table_name, exc)
             return False
+
     try:
         columns = ''
         values_template = ''
         sql = ''
-        values = tuple()
+        values = []
 
-        for i in xrange(len(keys)):
+        for i in range(len(keys)):
             if i > 0:
-                columns +=","
-                values_template +=","
+                columns += ","
+                values_template += ","
 
-            columns += " "+keys[i]['clean']
+            columns += " " + keys[i]['clean']
             values_template += " %s"
-            values += (MySQLdb.escape_string( str(rowdict[ keys[i]['ori']])), )
-
+            values.append(MySQLdb.escape_string(str(rowdict[keys[i]['ori']])))
 
         sql = "insert into %s (%s) values (%s)" % (table_name, columns, values_template)
-
-
-        cursor.execute(sql, values)
-    except Exception, e:
-        srv.logging.warn("Could not insert value into table %s. Query: %s, values: %s, Error: %s" %\
-                         (table_name, sql, str(values), str(e)))
+        cursor.execute(sql, tuple(values))
+    except Exception as exc:
+        srv.log.warn("Could not insert value into table %s. Query: %s, values: %s, Error: %s",
+                     table_name, sql, str(values), exc)
         return False
 
     try:
         now = time.strftime('%Y-%m-%d %H:%M:%S')
-        query = 'insert into %s set topic="%s", ts="%s" on duplicate key update ts="%s"' % \
-            (index_table_name, table_name, str(now), str(now))
+        query = ('INSERT INTO %s SET topic="%s", ts="%s" ON DUPLICATE KEY UPDATE ts="%s"' %
+                 index_table_name, table_name, now, now)
         cursor.execute(query)
-    except Exception, e:
-        srv.logging.warn("Could not insert value into index table %s" %\
-                         index_table_name)
+    except Exception as exc:
+        srv.log.warn("Could not insert value into index table '%s': %s", index_table_name, exc)
 
     return True
 
 
 def plugin(srv, item):
+    srv.log.debug("*** MODULE=%s: service=%s target=%s", __file__, item.service, item.target)
 
-    srv.logging.debug("*** MODULE=%s: service=%s target=%s", __file__, item.service, item.target)
-
-    host = item.config.get('host', 'localhost')
-    port = item.config.get('port', 3306)
-    user = item.config.get('user')
-    passwd = item.config.get('pass')
-    dbname = item.config.get('dbname')
-    index_table_name = item.config.get('index')
-    #ignore_keys = item.config.get('ignore_')
+    conf = item.config.get
+    host = conf('host', 'localhost')
+    port = conf('port', 3306)
+    user = conf('user')
+    passwd = conf('pass')
+    dbname = conf('dbname')
+    index_table_name = conf('index')
+    #ignore_keys = conf('ignore_')
 
     # Sanitize table_name
     table_name = item.data['topic'].replace('/', '_')
     table_name = re.compile(r'[^\d\w_]+').sub('', table_name)
 
     try:
-        conn = MySQLdb.connect(host=host,
-                               user=user,
-                               passwd=passwd,
-                               db=dbname)
+        conn = MySQLdb.connect(host=host, port=port, user=user, passwd=passwd, db=dbname)
         cursor = conn.cursor()
-    except Exception, e:
-        srv.logging.warn("Cannot connect to mysql: %s" % (str(e)))
+    except Exception as exc:
+        srv.log.warn("Cannot connect to mysql: %s", exc)
         return False
 
     # Create new dict for column data. First add fallback column
@@ -114,25 +112,22 @@ def plugin(srv, item):
     if item.data is not None:
         for key in item.data.keys():
             try:
-                if isinstance(col_data[key], basestring):
+                if isinstance(col_data[key], six.string_types):
                     col_data[key] = item.data[key].format(**item.data).encode('utf-8')
-            except Exception, e:
+            except Exception:
                 col_data[key] = item.data[key]
+
     try:
         result = add_row(srv, cursor, index_table_name, table_name, col_data, item.addrs)
         if not result:
-            srv.logging.debug("Failed building values to add to database")
+            srv.log.debug("Failed building values to add to database")
         else:
             conn.commit()
-    except Exception, e:
-        srv.logging.warn("Cannot add mysql row: %s" % (str(e)))
-        traceback.print_exc()
+    except Exception as exc:
+        srv.log.exception("Cannot add mysql row: %s", exc)
+        return False
+    finally:
         cursor.close()
         conn.close()
-        return False
-
-    cursor.close()
-    conn.close()
 
     return True
-

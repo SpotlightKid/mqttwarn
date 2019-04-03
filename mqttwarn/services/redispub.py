@@ -14,10 +14,10 @@ except:
 def plugin(srv, item):
     ''' redispub. Expects addrs to contain (channel) '''
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     if HAVE_REDIS is False:
-        srv.logging.warn("Redis is not installed")
+        srv.log.warn("Redis is not installed")
         return False
 
     host = item.config.get('host', 'localhost')
@@ -25,8 +25,8 @@ def plugin(srv, item):
 
     try:
         rp = redis.Redis(host, port)
-    except Exception, e:
-        srv.logging.warn("Cannot connect to redis on %s:%s : %s" % (host, port, str(e)))
+    except Exception as exc:
+        srv.log.warn("Cannot connect to redis on %s:%s : %s" % (host, port, exc))
         return False
 
     channel = item.addrs[0]
@@ -34,8 +34,8 @@ def plugin(srv, item):
 
     try:
         rp.publish(channel, text)
-    except Exception, e:
-        srv.logging.warn("Cannot publish to redis on %s:%s : %s" % (host, port, str(e)))
+    except Exception as exc:
+        srv.log.warn("Cannot publish to redis on %s:%s : %s" % (host, port, exc))
         return False
 
     return True

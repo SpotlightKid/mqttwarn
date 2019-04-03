@@ -10,7 +10,7 @@ import time
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     # item.config is brought in from the configuration file
     config   = item.config
@@ -21,7 +21,7 @@ def plugin(srv, item):
         carbon_host, carbon_port = item.addrs
         carbon_port = int(carbon_port)
     except:
-        srv.logging.error("Configuration for target `carbon' is incorrect")
+        srv.log.error("Configuration for target `carbon' is incorrect")
         return False
 
     # If the incoming payload has been transformed, use that,
@@ -31,7 +31,7 @@ def plugin(srv, item):
     try:
         parts = text.split()
     except:
-        srv.logging.error("target `carbon': cannot split string")
+        srv.log.error("target `carbon': cannot split string")
         return False
 
     if len(parts) == 1:
@@ -52,15 +52,15 @@ def plugin(srv, item):
     if metric_name.startswith('.'):     # omit dot there caused by useless leading slash in topic
         metric_name = metric_name[1:]
     carbon_msg = "%s %s %d" % (metric_name, value, tics)
-    srv.logging.debug("Sending to carbon: %s" % (carbon_msg))
+    srv.log.debug("Sending to carbon: %s" % (carbon_msg))
     carbon_msg = carbon_msg + "\n"
     try:
         sock = socket.socket()
         sock.connect((carbon_host, carbon_port))
         sock.sendall(carbon_msg)
         sock.close()
-    except Exception, e:
-        srv.logging.warning("Cannot send to carbon service %s:%d: %s" % (carbon_host, carbon_port, str(e)))
+    except Exception as exc:
+        srv.log.warning("Cannot send to carbon service %s:%d: %s" % (carbon_host, carbon_port, exc))
         return False
 
     return True

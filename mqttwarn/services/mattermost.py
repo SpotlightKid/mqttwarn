@@ -5,6 +5,8 @@ __author__    = 'Jan-Piet Mens <jp@mens.de>'
 __copyright__ = 'Copyright 2018 Jan-Piet Mens'
 __license__   = """Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-v10.html)"""
 
+import six
+
 HAVE_REQUESTS = True
 try:
     import requests
@@ -17,12 +19,12 @@ try:
 except ImportError:
     import simplejson as json
 
-def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+def plugin(srv, item):
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     if HAVE_REQUESTS == False:
-        srv.logging.error("Missing module: requests")
+        srv.log.error("Missing module: requests")
         return False
 
     hook_url    = item.addrs[0]
@@ -39,9 +41,9 @@ def plugin(srv, item):
         keylen = vallen = 10
         for key in j:
             # print type(key), keylen, len(key)
-            if type(key) == unicode and keylen < len(key):
+            if isinstance(key, six.string_types) and keylen < len(key):
                 keylen = len(key)
-            if type(j[key]) == unicode and vallen < len(j[key]):
+            if isinstance(j[key], six.string_types) and vallen < len(j[key]):
                 vallen = len(j[key])
         s = ""
         if title is not None and title != "":
@@ -53,8 +55,8 @@ def plugin(srv, item):
         for key in j:
             s = s + "| {0:<{kw}}  | {1:<{vw}} |\n".format(key, j[key], kw=keylen, vw=vallen)
         text = s
-    except Exception as e:
-        srv.logging.debug("not JSON; proceeding with text")
+    except Exception as exc:
+        srv.log.debug("not JSON; proceeding with text")
         pass
 
 
@@ -76,10 +78,10 @@ def plugin(srv, item):
     try:
         r = requests.post(hook_url, data=json.dumps(payload), headers=headers)
         if r.status_code != requests.codes.ok:
-            srv.logging.warning("Invalid response from Mattermost Webhook: %s" % (r.text))
+            srv.log.warning("Invalid response from Mattermost Webhook: %s" % (r.text))
             return False
-    except Exception as e:
-        srv.logging.warning("Failed to POST request to Mattermost Webhook: %s" % (str(e)))
+    except Exception as exc:
+        srv.log.warning("Failed to POST request to Mattermost Webhook: %s", exc)
         return False
 
     return True

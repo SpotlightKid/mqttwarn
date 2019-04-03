@@ -15,15 +15,15 @@ except ImportError:
 def plugin(srv, item):
     ''' expects (apikey, appname, eventname) in addrs'''
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
     if not HAVE_NMA:
-        srv.logging.warn("PyNMA is not installed")
+        srv.log.warn("PyNMA is not installed")
         return False
 
     try:
         apikey, appname, event = item.addrs
     except:
-        srv.logging.warn("NMA incorrect # of target params passed")
+        srv.log.warn("NMA incorrect # of target params passed")
         return False
 
     text = item.message
@@ -41,12 +41,12 @@ def plugin(srv, item):
             priority=priority,
             batch_mode=False)
 
-        srv.logging.debug("NMA returns %s" % (res))
+        srv.log.debug("NMA returns %s" % (res))
         # {'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx': {'message': '', u'code': u'200', 'type': u'success', u'remaining': u'798', u'resettimer': u'46'}}
 
         # FIXME: test for code 200
-    except Exception, e:
-        srv.logging.warn("NMA failed: %s" % (str(e)))
+    except Exception as exc:
+        srv.log.warn("NMA failed: %s", exc)
         return False
 
     return True

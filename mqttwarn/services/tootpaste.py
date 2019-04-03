@@ -17,10 +17,10 @@ def plugin(srv, item):
 
     _DEFAULT_URL = 'https://mastodon.social'
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     if not HAVE_MASTODON:
-        srv.logging.error("Python Mastodon.py is not installed")
+        srv.log.error("Python Mastodon.py is not installed")
         return False
 
     # item.config is brought in from the configuration file
@@ -38,8 +38,8 @@ def plugin(srv, item):
         )
 
         mastodon.toot(text)
-    except Exception, e:
-        srv.logging.warning("Cannot post to Mastodon: %s" % (str(e)))
+    except Exception as exc:
+        srv.log.warning("Cannot post to Mastodon: %s", exc)
         return False
 
     return True

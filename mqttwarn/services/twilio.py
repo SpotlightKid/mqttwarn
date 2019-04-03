@@ -15,15 +15,15 @@ except ImportError:
 def plugin(srv, item):
     ''' expects (accountSID, authToken, from, to) in addrs'''
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
     if not HAVE_TWILIO:
-        srv.logging.warn("twilio-python is not installed")
+        srv.log.warn("twilio-python is not installed")
         return False
 
     try:
         account_sid, auth_token, from_nr, to_nr = item.addrs
     except:
-        srv.logging.warn("Twilio target is incorrectly configured")
+        srv.log.warn("Twilio target is incorrectly configured")
         return False
 
     text = item.message
@@ -34,9 +34,9 @@ def plugin(srv, item):
                     body=text,
                     to=to_nr,
                     from_=from_nr)
-        srv.logging.debug("Twilio returns %s" % (message.sid))
-    except Exception, e:
-        srv.logging.warn("Twilio failed: %s" % (str(e)))
+        srv.log.debug("Twilio returns %s" % (message.sid))
+    except Exception as exc:
+        srv.log.warn("Twilio failed: %s", exc)
         return False
 
     return True

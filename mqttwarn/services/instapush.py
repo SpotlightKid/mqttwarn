@@ -15,7 +15,7 @@ except ImportError:
 def plugin(srv, item):
     ''' addrs: (node, name) '''
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     appid = item.config['appid']
     appsecret = item.config['appsecret']
@@ -28,8 +28,8 @@ def plugin(srv, item):
     for key in data["trackers"].keys():
         try:
             data["trackers"][key] = data["trackers"][key].format(**item.data).encode('utf-8')
-        except Exception, e:
-            srv.logging.debug("Parameter %s cannot be formatted: %s" % (key, str(e)))
+        except Exception as exc:
+            srv.log.debug("Parameter %s cannot be formatted: %s", key, exc)
             return False
     try:
         method = "POST"
@@ -46,15 +46,15 @@ def plugin(srv, item):
         connection = opener.open(request,timeout=5)
 
         reply = str(connection.read())
-        srv.logging.info("Server reply: %s" % reply)
+        srv.log.info("Server reply: %s" % reply)
 
         r = json.loads(reply)
-        srv.logging.info("%s: %s" % (item.target, r['msg']))
+        srv.log.info("%s: %s" % (item.target, r['msg']))
 
         return not r['error']
 
-    except urllib2.HTTPError, e:
-        srv.logging.warn("Failed to send POST request to instapush using %s: %s" % (resource, str(e.read())))
+    except urllib2.HTTPError as exc:
+        srv.log.warn("Failed to send POST request to instapush using %s: %s", resource, exc)
         return False
 
     return True

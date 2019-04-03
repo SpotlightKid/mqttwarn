@@ -10,7 +10,7 @@ import urllib
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     host      = item.config['host']
     port      = item.config['port']
@@ -40,8 +40,8 @@ def plugin(srv, item):
             else:
                 try:
                     ttsparams[key] = ttsparams[key].format(**item.data).encode('utf-8')
-                except Exception, e:
-                    srv.logging.debug("Parameter %s cannot be formatted: %s" % (key, str(e)))
+                except Exception as exc:
+                    srv.log.debug("Parameter %s cannot be formatted: %s" % (key, exc))
                     return False
 
     try:
@@ -52,15 +52,15 @@ def plugin(srv, item):
                 shout_url = shout_url + '?'
             shout_url = shout_url + urllib.urlencode(ttsparams)
         # debugging
-        srv.logging.debug("Shout URL: %s" % shout_url)
+        srv.log.debug("Shout URL: %s" % shout_url)
         # Freeswitch API
         server = ServerProxy("http://%s:%s@%s:%d" % (username, password, host, port))
         # channel variables we need to setup the call
         channel_vars = "{ignore_early_media=true,originate_timeout=60,origination_caller_id_name='" + title + "'}"
         # originate the call
         server.freeswitch.api("originate", channel_vars + gateway + number + " &playback(" + shout_url + ")")
-    except Exception, e:
-        srv.logging.error("Error originating Freeswitch VOIP call to %s via %s%s: %s" % (item.target, gateway, number, str(e)))
+    except Exception as exc:
+        srv.log.error("Error originating Freeswitch VOIP call to %s via %s%s: %s" % (item.target, gateway, number, exc))
         return False
 
     return True

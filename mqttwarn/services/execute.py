@@ -49,7 +49,7 @@ def plugin(srv, item):
     by ``tempfile.gettempdir()``.
 
     """
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     replace = item.config.get('text_replace', '[TEXT]')
     cwd = item.config.get('cwd', tempfile.gettempdir())
@@ -57,15 +57,16 @@ def plugin(srv, item):
     cmd = [arg.replace(replace, text) for arg in item.addrs]
 
     try:
+        srv.log.debug("Executing command: %s", cmd)
         # Capture command stdout and stderr output,
         # so that it does not end up on mqttwarn's stdout.
         res = subprocess.check_output(cmd, stdin=None, stderr=subprocess.STDOUT, shell=False,
                                        universal_newlines=True, cwd=cwd)
     except OSError as exc:
-        srv.logging.error("Cannot execute '%s': %s", cmd, exc)
+        srv.log.error("Cannot execute '%s': %s", cmd, exc)
     except subprocess.CalledProcessError as exc:
-        srv.logging.error("Command '%s' returned non-zero exit value: %s", cmd, exc.returncode)
-        srv.logging.debug("Command output: %s", res)
+        srv.log.error("Command '%s' returned non-zero exit value: %s", cmd, exc.returncode)
+        srv.log.debug("Command output: %s", res)
     else:
         return True
 

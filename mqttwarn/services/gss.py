@@ -19,9 +19,9 @@ except ImportError:
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
     if not HAVE_GSS:
-        srv.logging.warn("Google Spreadsheet is not installed")
+        srv.log.warn("Google Spreadsheet is not installed")
         return False
 
     spreadsheet_key = item.addrs[0]
@@ -30,7 +30,7 @@ def plugin(srv, item):
     password = item.config['password']
 
     try:
-        srv.logging.debug("Adding row to spreadsheet %s [%s]..." % (spreadsheet_key, worksheet_id))
+        srv.log.debug("Adding row to spreadsheet %s [%s]..." % (spreadsheet_key, worksheet_id))
 
         client = gdata.spreadsheet.service.SpreadsheetsService()
         client.debug = True
@@ -45,10 +45,10 @@ def plugin(srv, item):
             row[k] = str(v)
 
         client.InsertRow(row, spreadsheet_key, worksheet_id)
-        srv.logging.debug("Successfully added row to spreadsheet")
+        srv.log.debug("Successfully added row to spreadsheet")
 
-    except Exception as e:
-        srv.logging.warn("Error adding row to spreadsheet %s [%s]: %s" % (spreadsheet_key, worksheet_id, str(e)))
+    except Exception as exc:
+        srv.log.warn("Error adding row to spreadsheet %s [%s]: %s" % (spreadsheet_key, worksheet_id, exc))
         return False
 
     return True

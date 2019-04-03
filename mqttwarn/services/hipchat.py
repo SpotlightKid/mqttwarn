@@ -15,7 +15,7 @@ except ImportError:
 def plugin(srv, item):
     ''' addrs: (token, roomid, color, notify) '''
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     token   = item.addrs[0]
     roomid  = item.addrs[1]
@@ -42,8 +42,8 @@ def plugin(srv, item):
         resp = urllib2.urlopen(request, timeout=timeout)
         data = resp.read()
 
-    except Exception, e:
-            srv.logging.warn("Cannot POST %s: %s" % (url, str(e)))
+    except Exception as exc:
+            srv.log.warn("Cannot POST %s: %s" % (url, exc))
             return False
 
     return True

@@ -14,7 +14,7 @@ except ImportError:
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     if HAVE_NSCA == False:
         return False
@@ -41,8 +41,8 @@ def plugin(srv, item):
     try:
         notif = NSCANotifier(nsca_host)
         notif.svc_result(host_name, service_description, status, text)
-    except Exception, e:
-        srv.logging.warning("Cannot notify to NSCA host `%s': %s" % (nsca_host, str(e)))
+    except Exception as exc:
+        srv.log.warning("Cannot notify to NSCA host `%s': %s" % (nsca_host, exc))
         return False
 
     return True

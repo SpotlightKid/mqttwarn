@@ -10,7 +10,7 @@ import xmpp     # pip install xmpp
 def plugin(srv, item):
     """Send a message to XMPP recipient(s)."""
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     xmpp_addresses = item.addrs
     sender = item.config['sender']
@@ -18,21 +18,21 @@ def plugin(srv, item):
     text = item.message
 
     if not xmpp_addresses:
-        srv.logging.warn("Skipped sending XMPP notification to %s, "
+        srv.log.warn("Skipped sending XMPP notification to %s, "
                          "no addresses configured" % (item.target))
         return False
 
     try:
-        srv.logging.debug("Sending XMPP notification to %s, addresses: %s" % (item.target, xmpp_addresses))
+        srv.log.debug("Sending XMPP notification to %s, addresses: %s" % (item.target, xmpp_addresses))
         for target in xmpp_addresses:
             jid = xmpp.protocol.JID(sender)
             connection = xmpp.Client(jid.getDomain(),debug=[])
             connection.connect()
             connection.auth(jid.getNode(), password, resource=jid.getResource())
             connection.send(xmpp.protocol.Message(target, text))
-        srv.logging.debug("Successfully sent message")
-    except Exception, e:
-        srv.logging.error("Error sending message to %s: %s" % (item.target, str(e)))
+        srv.log.debug("Successfully sent message")
+    except Exception as exc:
+        srv.log.error("Error sending message to %s: %s" % (item.target, exc))
         return False
 
     return True

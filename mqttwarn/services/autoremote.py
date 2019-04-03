@@ -20,15 +20,15 @@ import requests
 def plugin(srv, item):
     ''' expects (apikey, password, target, group, ttl) in addrs '''
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     try:
-        srv.logging.debug("Sending to autoremote service")
+        srv.log.debug("Sending to autoremote service")
         url = "https://" + item.addrs[0] + ":" + item.addrs[1]
         requests.get('https://autoremotejoaomgcd.appspot.com/sendmessage?key=' + item.addrs[0] + '&message=' + item.message + '&target=' + item.addrs[2] + '&sender=' + item.topic + '&password=' + item.addrs[1] + '&ttl=' + item.addrs[4] + '&collapseKey=' + item.addrs[3])
-	srv.logging.debug("Successfully sent to autoremote service")
-    except Exception, e:
-        srv.logging.warning("Failed to send message to autoremote service" % (str(e)))
+	srv.log.debug("Successfully sent to autoremote service")
+    except Exception as exc:
+        srv.log.warning("Failed to send message to autoremote service", exc)
         return False
 
     return True

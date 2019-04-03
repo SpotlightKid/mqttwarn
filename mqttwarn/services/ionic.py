@@ -20,10 +20,10 @@ def plugin(srv, item):
     # 1 is the Ionic appsecret (private key)
     # 2..N are the push tokens returned by Ionic push service
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     if len(item.addrs) < 3:
-        srv.logging.error("appid, appsecret and atleast one devicetoken is required")
+        srv.log.error("appid, appsecret and atleast one devicetoken is required")
         return False
 
     appid = item.addrs[0]
@@ -31,13 +31,13 @@ def plugin(srv, item):
     devicetokens = item.addrs[2:]
 
     if not appid or appid.isspace():
-        srv.logging.error("appid is missing or empty")
+        srv.log.error("appid is missing or empty")
         return False
     if not appsecret or appsecret.isspace():
-        srv.logging.error("appsecret is missing or empty")
+        srv.log.error("appsecret is missing or empty")
         return False
     if len(devicetokens) == 0:
-        srv.logging.error("atleast one devicetoken is required")
+        srv.log.error("atleast one devicetoken is required")
         return False
 
     devicetokens = filter(None, devicetokens)
@@ -58,14 +58,15 @@ def plugin(srv, item):
 
         request = urllib2.Request(resource, data=json.dumps(data))
         request.add_header('X-Ionic-Application-Id', appid)
-        request.add_header("Authorization", "Basic %s" % base64.encodestring('%s:' % appsecret).replace('\n', ''))
+        request.add_header("Authorization", "Basic %s" %
+                           base64.encodestring('%s:' % appsecret).replace('\n', ''))
         request.add_header("Content-Type", 'application/json')
 
         connection = opener.open(request, timeout=5)
-        srv.logging.info("Server reply: %s" % str(connection.read()))
+        srv.log.info("Server reply: %s" % str(connection.read()))
 
-    except urllib2.HTTPError, e:
-        srv.logging.warn("Failed to send POST request to ionic using %s: %s" % (resource, str(e.read())))
+    except urllib2.HTTPError as exc:
+        srv.log.warn("Failed to send POST request to ionic using %s: %s", resource, exc)
         return False
 
     return True

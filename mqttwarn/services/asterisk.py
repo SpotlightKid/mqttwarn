@@ -10,7 +10,7 @@ import asterisk.manager
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     host     = item.config['host']
     port = item.config['port']
@@ -18,9 +18,9 @@ def plugin(srv, item):
     password = item.config['password']
     extension = item.config['extension']
     context  = item.config['context']
- 
+
     gateway  = item.addrs[0]
-    number   = item.addrs[1]    
+    number   = item.addrs[1]
     title    = item.title
     message  = item.message
 
@@ -28,19 +28,19 @@ def plugin(srv, item):
         manager = asterisk.manager.Manager()
         manager.connect(host, port)
         response = manager.login(username, password)
-        srv.logging.debug("Authentication {}".format(response))
+        srv.log.debug("Authentication {}".format(response))
         channel = gateway + number
         channel_vars = {'text': message}
         # originate the call
         response = manager.originate(channel, extension, context=context, priority='1', caller_id=extension, variables=channel_vars)
-        srv.logging.info("Call {}".format(response))
+        srv.log.info("Call {}".format(response))
         manager.logoff()
-    except asterisk.manager.ManagerSocketException as e:
-        srv.logging.error("Error connecting to the manage: {}".format(e))
-    except asterisk.manager.ManagerAuthException as e:
-        srv.logging.error("Error logging in to the manager: {}".format(e))
-    except asterisk.manager.ManagerException as e:
-        srv.logging.error("Error: {}".format(e))
+    except asterisk.manager.ManagerSocketException as exc:
+        srv.log.error("Error connecting to the manage: %s", exc)
+    except asterisk.manager.ManagerAuthException as exc:
+        srv.log.error("Error logging in to the manager: %s", exc)
+    except asterisk.manager.ManagerException as exc:
+        srv.log.error("Error: %s", exc)
 
     finally:
     # remember to clean up
@@ -48,5 +48,5 @@ def plugin(srv, item):
             manager.close()
         except asterisk.manager.ManagerSocketException:
             pass
-    
+
     return True

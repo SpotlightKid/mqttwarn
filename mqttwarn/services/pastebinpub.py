@@ -14,11 +14,11 @@ except:
 def plugin(srv, item):
     """ Pushlish the message to pastebin.com """
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__,
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__,
         item.service, item.target)
 
     if HAVE_PASTEBIN is False:
-        srv.logging.warn("Pastebin module is not available.")
+        srv.log.warn("Pastebin module is not available.")
         return False
 
     pastebin_data = item.addrs
@@ -38,12 +38,12 @@ def plugin(srv, item):
             api_dev_key,
             username,
             password)
-    except Exception, e:
-        srv.logging.warn("Cannot retrieve session data from pastebin: %s" % (str(e)))
+    except Exception as exc:
+        srv.log.warn("Cannot retrieve session data from pastebin: %s", exc)
         return False
 
     try:
-        srv.logging.debug("Adding entry to pastebin.com as user %s..." % (username))
+        srv.log.debug("Adding entry to pastebin.com as user %s..." % (username))
         pastebinapi.paste(
             api_dev_key,
             text,
@@ -53,9 +53,9 @@ def plugin(srv, item):
             paste_private = pasteprivate,
             paste_expire_date = expiredate
             )
-        srv.logging.debug("Successfully added paste to pastebin")
-    except Exception, e:
-        srv.logging.warn("Cannot publish to pastebin: %s" % (str(e)))
+        srv.log.debug("Successfully added paste to pastebin")
+    except Exception as exc:
+        srv.log.warn("Cannot publish to pastebin: %s", exc)
         return False
 
     return True

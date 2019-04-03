@@ -14,12 +14,12 @@ import time
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     try:
         trapper, port = item.addrs
     except:
-        srv.logging.error("Module target is incorrectly configured")
+        srv.log.error("Module target is incorrectly configured")
         return False
 
     host = item.config.get('host', 'MQTT_BUS')
@@ -27,7 +27,7 @@ def plugin(srv, item):
 
     client = item.data.get('client', None)
     if client is None:
-        srv.logging.warn("No client in item; ignoring")
+        srv.log.warn("No client in item; ignoring")
         return False
 
     # If status_key is in item (set by function ZabbixData()), then we have to
@@ -51,7 +51,7 @@ def plugin(srv, item):
             sender.ClearData()
 
             if res and 'info' in res:
-                srv.logging.debug("Trapper for LLD responds with %s" % res['info'])
+                srv.log.debug("Trapper for LLD responds with %s" % res['info'])
 
                 # Add status to the "status key". This must not happen too early,
                 # or Zabbix will fail this value if the LLD for the host hasn't
@@ -61,17 +61,17 @@ def plugin(srv, item):
                 res = sender.Send()
                 sender.ClearData()
                 if res and 'info' in res:
-                    srv.logging.debug("Trapper for STATUS responds with %s" % res['info'])
+                    srv.log.debug("Trapper for STATUS responds with %s" % res['info'])
 
                 return True
-        except Exception, e:
-            srv.logging.warn("Trapper responded: %s" % (str(e)))
+        except Exception as exc:
+            srv.log.warn("Trapper responded: %s", exc)
             return False
 
     # We are adding a normal item/value via the trapper
     key = item.data.get('key', None)
     if client is None or key is None:
-        srv.logging.warn("Client or Key missing in item; ignoring")
+        srv.log.warn("Client or Key missing in item; ignoring")
         return False
 
     value = item.message
@@ -84,10 +84,10 @@ def plugin(srv, item):
         sender.ClearData()
 
         if res and 'info' in res:
-            srv.logging.debug("Trapper for client=%s, item=%s, value=%s responds with %s" % (client, key, value, res['info']))
+            srv.log.debug("Trapper for client=%s, item=%s, value=%s responds with %s" % (client, key, value, res['info']))
 
             return True
-    except Exception, e:
-        srv.logging.warn("Trapper responded: %s" % (str(e)))
+    except Exception as exc:
+        srv.log.warn("Trapper responded: %s", exc)
 
     return False

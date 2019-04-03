@@ -16,7 +16,7 @@ except ImportError:
 def plugin(srv, item):
     ''' addrs: (method, url, dict(params), list(username, password), json) '''
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     method = item.addrs[0]
     url    = item.addrs[1]
@@ -54,8 +54,8 @@ def plugin(srv, item):
             else:
                 try:
                     params[key] = params[key].format(**item.data).encode('utf-8')
-                except Exception, e:
-                    srv.logging.debug("Parameter %s cannot be formatted: %s" % (key, str(e)))
+                except Exception as exc:
+                    srv.log.debug("Parameter %s cannot be formatted: %s" % (key, exc))
                     return False
 
     message  = item.message
@@ -78,8 +78,8 @@ def plugin(srv, item):
 
             resp = urllib2.urlopen(request, timeout=timeout)
             data = resp.read()
-        except Exception, e:
-            srv.logging.warn("Cannot GET %s: %s" % (resource, str(e)))
+        except Exception as exc:
+            srv.log.warn("Cannot GET %s: %s" % (resource, exc))
             return False
 
         return True
@@ -103,11 +103,11 @@ def plugin(srv, item):
             resp = urllib2.urlopen(request, timeout=timeout)
             data = resp.read()
             # print "POST returns ", data
-        except Exception, e:
-            srv.logging.warn("Cannot POST %s: %s" % (url, str(e)))
+        except Exception as exc:
+            srv.log.warn("Cannot POST %s: %s" % (url, exc))
             return False
 
         return True
 
-    srv.logging.warn("Unsupported HTTP method: %s" % (method))
+    srv.log.warn("Unsupported HTTP method: %s" % (method))
     return False

@@ -53,7 +53,7 @@ def add_row(cursor, tablename, rowdict, schema):
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     host    = item.config.get('host', 'localhost')
     port    = item.config.get('port', 5432)
@@ -69,7 +69,7 @@ def plugin(srv, item):
         except:
             schema = 'public'
     except:        
-        srv.logging.warn("postgres target incorrectly configured")
+        srv.log.warn("postgres target incorrectly configured")
         return False
 
     try:
@@ -79,8 +79,8 @@ def plugin(srv, item):
                     password=passwd,
                     database=dbname)
         cursor = conn.cursor()
-    except Exception, e:
-        srv.logging.warn("Cannot connect to postgres: %s" % (str(e)))
+    except Exception as exc:
+        srv.log.warn("Cannot connect to postgres: %s", exc)
         return False
 
     text = item.message
@@ -95,16 +95,16 @@ def plugin(srv, item):
         for key in item.data.keys():
             try:
                 col_data[key] = item.data[key].format(**item.data).encode('utf-8')
-            except Exception, e:
+            except Exception as exc:
                 col_data[key] = item.data[key]
 
     try:
         unknown_keys = add_row(cursor, table_name, col_data, schema)
         if unknown_keys is not None:
-            srv.logging.debug("Skipping unused keys %s" % ",".join(unknown_keys))
+            srv.log.debug("Skipping unused keys %s" % ",".join(unknown_keys))
         conn.commit()
-    except Exception, e:
-        srv.logging.warn("Cannot add postgres row: %s" % (str(e)))
+    except Exception as exc:
+        srv.log.warn("Cannot add postgres row: %s", exc)
         cursor.close()
         conn.close()
         return False

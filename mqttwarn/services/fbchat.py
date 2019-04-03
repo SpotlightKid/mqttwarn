@@ -10,7 +10,7 @@ from fbchat.models import *
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
     client = item.addrs[0]
     password = item.addrs[1]
@@ -20,15 +20,15 @@ def plugin(srv, item):
     friends = fbclient.searchForUsers(friend)
     ffriend = friends[0]
 
-    srv.logging.debug("user %s" % (item.target))
+    srv.log.debug("user %s" % (item.target))
 
     text = item.message
     try:
-        srv.logging.debug("Sending msg to %s..." % (item.target))
+        srv.log.debug("Sending msg to %s..." % (item.target))
         sent = fbclient.sendMessage(text, thread_id=ffriend.uid, thread_type=ThreadType.USER)
-        srv.logging.debug("Successfully sent message")
-    except Exception, e:
-        srv.logging.error("Error sending fbchat to %s: %s" % (item.target, str(e)))
+        srv.log.debug("Successfully sent message")
+    except Exception as exc:
+        srv.log.error("Error sending fbchat to %s: %s" % (item.target, exc))
         return False
     client.logout()
     return True

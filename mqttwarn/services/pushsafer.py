@@ -38,7 +38,7 @@ def plugin(srv, item):
     title    = item.title
 
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
     
     # based on the Pushsafer API (https://www.pushsafer.com/en/pushapi)
     # addrs is an array with two or three elements:
@@ -54,7 +54,7 @@ def plugin(srv, item):
     try:
         appkey  = addrs[0]
     except:
-        srv.logging.warn("No pushsafer private or alias key configured for target `%s'" % (item.target))
+        srv.log.warn("No pushsafer private or alias key configured for target `%s'" % (item.target))
         return False
 
     params = {
@@ -86,11 +86,11 @@ def plugin(srv, item):
         params['t'] = title
 
     try:
-        srv.logging.debug("Sending pushsafer notification to %s [%s]..." % (item.target, params))
+        srv.log.debug("Sending pushsafer notification to %s [%s]..." % (item.target, params))
         pushsafer(m=message, k=appkey, **params)
-        srv.logging.debug("Successfully sent pushsafer notification")
-    except Exception, e:
-        srv.logging.warn("Error sending pushsafer notification to %s [%s]: %s" % (item.target, params, str(e)))
+        srv.log.debug("Successfully sent pushsafer notification")
+    except Exception as exc:
+        srv.log.warn("Error sending pushsafer notification to %s [%s]: %s" % (item.target, params, exc))
         return False
 
     return True

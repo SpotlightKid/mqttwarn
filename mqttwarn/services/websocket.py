@@ -11,7 +11,7 @@ import websocket # pip install websocket-client
 
 def plugin(srv, item):
 
-    srv.logging.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
+    srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
 
     # item.config is brought in from the configuration file
@@ -31,8 +31,8 @@ def plugin(srv, item):
         ws.connect(uri)
         ws.send(text)
         ws.close()
-    except Exception, e:
-        srv.logging.warning("Cannot write to websocket `%s': %s" % (uri, str(e)))
+    except Exception as exc:
+        srv.log.warning("Cannot write to websocket `%s': %s" % (uri, exc))
         return False
 
     return True
