@@ -212,13 +212,14 @@ class MQTTMessageWrapper(object):
 
         return self._decoded[encoding]
 
-    def data(self):
+    def data(self, encoding='utf-8'):
         """Return a dict with standard transformation data available to all plugins."""
         if not hasattr(self, 'm_data'):
             dt = datetime.now()
             self._data = {
                 'topic': self.msg.topic,
-                'payload': self.msg.payload,
+                'raw_payload': self.msg.payload,
+                'payload': self.payload_string(encoding),
                 # Unix timestamp in seconds since the epoch
                 '_dtepoch': int(time.time()),
                 # UTC timestamp, e.g. 2014-02-17T10:38:43.910691Z
@@ -577,16 +578,24 @@ def load_services(services):
 
 
 def load_topics(services):
+    log.debug("Loading topic handlers configuration...")
+
     for section in context.get_handler_sections():
         targets = context.get_handler_targets(section)
         service_found = False
 
         if callable(targets):
             service_found = True
-        elif isinstance(targets, list):
-            for service, target in targets:
-                if service in services:
-                    service_found = True
+        elif targets:
+            if isinstance(targets, dict):
+                for targetlist in targets.values():
+                    for service, _ in targetlist:
+                        if service in services:
+                            service_found = True
+            elif isinstance(targets, list):
+                for service, _ in targets:
+                    if service in services:
+                        service_found = True
 
         if service_found:
             subscription = context.get_handler_topic(section)

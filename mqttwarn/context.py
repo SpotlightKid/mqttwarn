@@ -3,7 +3,9 @@
 
 import logging
 
-from mqttwarn.util import is_funcspec, load_function
+import six
+
+from .util import is_funcspec, load_function
 
 
 log = logging.getLogger(__name__)
@@ -63,19 +65,51 @@ class RuntimeContext(object):
         Returns None if no targets are specified or the targets function cannot be imported.
 
         """
-        if self.config.has_option(section, 'targets'):
-            value = self.config.get(section, 'targets')
+        value = self.config.g(section, 'targets', fallback=None)
 
-            if is_funcspec(value):
-                dottedpath, funcname = value.split(':', 1)
+        if is_funcspec(value):
+            dottedpath, funcname = value.split(':', 1)
 
-                try:
-                    return load_function(dottedpath, funcname)
-                except Exception as exc:
-                    log.warn("Could not import topic targets function '%s' defined in section "
-                             "'%s': %s", value, section, exc)
-            else:
-                return [target.split(':', 1) for target in self.config.getlist(section, 'targets')]
+            try:
+                return load_function(dottedpath, funcname)
+            except Exception as exc:
+                log.warn("Could not import topic targets function '%s' defined in section "
+                         "'%s': %s", value, section, exc)
+        elif isinstance(value, six.string_types):
+            targetlist = [item.strip() for item in value.split(',')]
+            value = []
+
+            for service in targetlist:
+                if isinstance(service, six.string_types):
+                    try:
+                        service, target = service.split(':', 1)
+                    except ValueError:
+                        target = None
+                else:
+                    service, target = service[:2]
+
+                value.append((service, target or None))
+
+            return value
+        elif isinstance(value, dict):
+            for topic, targetlist in list(value.items()):
+                value[topic] = []
+
+                if isinstance(targetlist, six.string_types):
+                    targetlist = [targetlist]
+
+                for service in targetlist:
+                    if isinstance(service, six.string_types):
+                        try:
+                            service, target = service.split(':', 1)
+                        except ValueError:
+                            target = None
+                    else:
+                        service, target = service[:2]
+
+                    value[topic].append((service, target or None))
+
+            return value
 
     def get_handler_config(self, section):
         return self.config[section]

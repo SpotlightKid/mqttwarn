@@ -121,7 +121,7 @@ class Config(RawConfigParser):
             return val
 
     def getlist(self, section, option, fallback=_UNSET):
-        """Return value of given section and option as a list,
+        """Return value of given section and option as a list.
 
         Raises NoOptionError if option is not present in section and no fallback
         value was specified.
@@ -146,7 +146,7 @@ class Config(RawConfigParser):
         Raises TypeError if option value can not be parsed as a dictionary.
 
         """
-        data = self.g(section, option)
+        data = self.g(section, option, fallback=fallback)
 
         if not isinstance(data, dict):
             raise TypeError("Option value %r is not a dictionary." % (data,))
