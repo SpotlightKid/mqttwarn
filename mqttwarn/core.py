@@ -9,6 +9,7 @@ import threading
 import time
 from datetime import datetime
 from functools import lru_cache
+from inspect import isclass
 
 import paho.mqtt.client as paho
 import six
@@ -75,9 +76,6 @@ class Service(object):
     def __init__(self, mqttc, logger):
         # Reference to MQTT client object
         self.mqttc = mqttc
-
-        # Reference to all mqttwarn globals, for using its machinery from plugins
-        self.mwcore = globals()
 
         # Reference to logging object
         self.log = log
@@ -527,9 +525,7 @@ def processor(worker_id=None):
             try:
                 # Run the plugin in a separate thread and kill it if it doesn't return in 10s
                 plugin = job.service['plugin']
-                service_logger_name = 'mqttwarn.services.{}'.format(service)
-                srv = make_service(mqttc=mqttc, name=service_logger_name)
-                notified = timeout(plugin, (srv, st))
+                notified = timeout(plugin, (job.service['srv'], st))
             except Exception as exc:
                 log.error("Cannot invoke service for '%s': %s", service, exc)
 
@@ -543,7 +539,7 @@ def processor(worker_id=None):
     log.debug("Worker thread #%s exiting...", worker_id)
 
 
-def load_services(services):
+def load_services(services, mqttc):
     for service in services:
         service_config = context.get_service_config(service)
 
@@ -563,6 +559,11 @@ def load_services(services):
 
         try:
             plugin_func = load_function(modname, 'plugin', extra_pkgs=extra_pkgs)
+            service_logger_name = 'mqttwarn.services.{}'.format(service)
+            srv = make_service(mqttc=mqttc, name=service_logger_name)
+
+            if isclass(plugin_func):
+                plugin_func = plugin_func(srv, service_config)
         except Exception as exc:
             log.exception("Unable to load plugin module '%s' for service '%s': %s",
                           modname, service, exc)
@@ -574,10 +575,11 @@ def load_services(services):
                 'targets': service_targets,
                 'plugin': plugin_func,
                 'module': modname,
+                'srv': srv,
             }
 
 
-def load_topics(services):
+def load_topichandlers(services):
     log.debug("Loading topic handlers configuration...")
 
     for section in context.get_handler_sections():
@@ -624,9 +626,6 @@ def connect():
         log.error("Cannot chdir to %s: %s", cf.directory, exc)
         sys.exit(2)
 
-    load_services(services)
-    load_topics(services)
-
     # Initialize MQTT broker connection
     mqttc = paho.Client(cf.client_id, clean_session=cf.clean_session, protocol=cf.protocol,
                         transport=cf.transport)
@@ -634,6 +633,11 @@ def connect():
     mqttc.on_connect = on_connect
     mqttc.on_message = on_message
     mqttc.on_disconnect = on_disconnect
+
+    # initialize service configurations
+    load_services(services, mqttc)
+    # and topic handler
+    load_topichandlers(services)
 
     # check for authentication
     if cf.username:

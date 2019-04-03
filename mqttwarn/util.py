@@ -105,7 +105,7 @@ def load_function(dottedpath, name, extra_pkgs=None):
     if not mod:
         raise ModuleNotFoundError("Could not find module '%s'." % dottedpath)
 
-    func = getattr(mod, name, None)
+    func = getattr(mod, name, getattr(mod, name.capitalize(), None))
 
     if func is None:
         raise ImportError("Could not import '%s' from '%s'" % (name, dottedpath))
