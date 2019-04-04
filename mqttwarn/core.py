@@ -86,12 +86,12 @@ class Service(object):
 
 
 class Job(object):
-    def __init__(self, prio, service, handler, msg, data, target):
-        self.prio = prio
-        self.service = service
+    def __init__(self, prio, service, target, handler, msg, data):
+        self.data = data
         self.handler = handler
         self.msg = msg
-        self.data = data
+        self.prio = prio
+        self.service = service
         self.target = target
         log.debug("New '%s:%s' job for topic '%s'.", service['name'], target, msg.topic)
 
@@ -425,6 +425,7 @@ def send_to_targets(handler, msg):
         targetlist = handler.targets(section, topic, data)
     elif isinstance(handler.targets, dict):
         # XXX: Refactor this whole block into a separate function
+
         def get_key(item):
             # Prefix a key with the number of topic levels and then use reverse alphabetic ordering
             # '+' is after '#' in ascii table
@@ -440,6 +441,7 @@ def send_to_targets(handler, msg):
 
         # Produce a sorted list of topic/targets with longest and more specific first
         sorted_dispatcher = sorted(handler.targets.items(), key=get_key, reverse=True)
+
         for match_topic, targets in sorted_dispatcher:
             if paho.topic_matches_sub(match_topic, topic):
                 # hocus pocus, let targets become a list
@@ -506,8 +508,6 @@ def processor(jobq, worker_id=None, job_timeout=10):
     of handling the service, and invoke the module's plugin to do so.
 
     """
-    conf = context.get_config
-
     while not exit_flag:
         log.debug('Job queue has %s items to process.', jobq.qsize())
         job = jobq.get()
@@ -522,27 +522,27 @@ def processor(jobq, worker_id=None, job_timeout=10):
         log.debug("Processor #%s is handling '%s:%s'.", worker_id, service, target)
 
         data = job.data.copy()
-        item = {
-            'service': service,
-            'section': handler.section,
-            'target': target,
-            'config': job.service['config'],
-            'addrs': job.service['targets'][target],
-            'topic': topic,
-            'payload': job.msg.payload,
-            'data': data,
-            'title': handler.xform('title', SCRIPTNAME, data),
-            'image': handler.xform('image', '', data),
-            'message': handler.xform('format', job.msg.payload_string(), data),
-        }
+        item = Struct(
+            service=service,
+            section=handler.section,
+            target=target,
+            config=job.service['config'],
+            addrs=job.service['targets'][target],
+            topic=topic,
+            payload=job.msg.payload,
+            data=data,
+            title=handler.xform('title', SCRIPTNAME, data),
+            image=handler.xform('image', '', data),
+            message=handler.xform('format', job.msg.payload_string(), data)
+        )
 
         try:
-            item['priority'] = int(handler.xform('priority', 0, data))
-        except Exception as exc:
-            item['priority'] = 0
-            log.debug("Failed to determine the priority, defaulting to zero: %s", exc)
+            item.priority = int(handler.xform('priority', 0, data))
+        except Exception:
+            item.priority = 0
+            log.debug("Failed to determine the priority, defaulting to zero.")
 
-        template = conf(handler.section, 'template')
+        template = context.get_config(handler.section, 'template')
 
         if template is not None:
             if HAVE_JINJA:
@@ -560,7 +560,7 @@ def processor(jobq, worker_id=None, job_timeout=10):
             # Run the plugin in a separate thread and kill it if it doesn't return in time
             with stopit.ThreadingTimeout(job_timeout):
                 try:
-                    result = job.service['plugin'](job.service['srv'], st)
+                    result = job.service['plugin'](job.service['srv'], item)
                 except stopit.TimeoutException:
                     log.warn("Service '%s:%s' for topic '%s' cancelled after %is timeout.",
                              service, target, topic, job_timeout)

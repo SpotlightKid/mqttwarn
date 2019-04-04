@@ -23,7 +23,7 @@ class Struct:
     def get(self, key, default=None):
         return self.__dict__.get(key, default)
 
-    def todict(self):
+    def asdict(self):
         return {k: v for k, v in six.iteritems(self.__dict__)}
 
 
