@@ -242,23 +242,21 @@ class Plugin:
             self.log.error("postgres target incorrectly configured: %s", exc)
             return False
 
-        # Create a new dict for column data and fill it with payload JSON data,
-        # attempting to format each value with the transformation data.
-        col_data = {}
+        # Attempting to format each JSON data value with the transformation data.
 
-        if item.data is not None:
-            for key, value in item.data.items():
+        for key, value in item.data.items():
+            if key not in META_KEYS:
                 try:
-                    col_data[key] = value.format(**item.data)
+                    item.data[key] = value.format(**item.data)
                 except Exception:
-                    col_data[key] = value
+                    pass
 
         try:
             with self.get_connection() as conn:
                 try:
                     cursor = conn.cursor()
-                    unknown_keys = self.add_row(cursor, schema, table_name, col_data, item.message,
-                                                fallback_col)
+                    unknown_keys = self.add_row(cursor, schema, table_name, item.data,
+                                                item.message, fallback_col)
                     conn.commit()
                 except Exception as exc:
                     self.log.error("Could not add postgres row: %s", exc)
