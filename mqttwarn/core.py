@@ -223,21 +223,26 @@ class MQTTMessageWrapper(object):
     def data(self, encoding='utf-8'):
         """Return a dict with standard transformation data available to all plugins."""
         if not hasattr(self, 'm_data'):
-            dt = datetime.now()
+            dt = datetime.utcnow()
+            lt = datetime.now()
             self._data = {
                 'topic': self.msg.topic,
                 'raw_payload': self.msg.payload,
                 'payload': self.payload_string(encoding),
+                # datetime.datetime instance for UTC
+                '_dt': dt,
+                # datetime.datetime instance for local time
+                '_lt': lt,
                 # Unix timestamp in seconds since the epoch
-                '_dtepoch': int(time.time()),
+                '_dtepoch': dt.timestamp(),
                 # UTC timestamp, e.g. 2014-02-17T10:38:43.910691Z
-                '_dtiso': datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                # local time in iso format
-                '_ltiso': datetime.now().isoformat(),
+                '_dtiso': dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                # Local time in iso format
+                '_ltiso': lt.isoformat(),
                 # Local time in hours and minutes, e.g. 10:16
-                '_dthhmm': dt.strftime('%H:%M'),
+                '_lthhmm': lt.strftime('%H:%M'),
                 # Local time in hours, minutes and seconds, e.g. 10:16:21
-                '_dthhmmss': dt.strftime('%H:%M:%S')
+                '_lthhmmss': lt.strftime('%H:%M:%S')
             }
 
         return self._data

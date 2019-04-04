@@ -2603,12 +2603,16 @@ are defined in `item.data`:
 
 ```python
 {
-  'topic'         : topic name
-  'payload'       : topic payload
-  '_dtepoch'      : epoch time                  # 1392628581
-  '_dtiso'        : ISO date (UTC)              # 2014-02-17T10:38:43.910691Z
-  '_dthhmm'       : timestamp HH:MM (local)     # 10:16
-  '_dthhmmss'     : timestamp HH:MM:SS (local)  # 10:16:21
+  'topic'         : message topic (string)
+  'payload'       : message payload (string)
+  'raw_payload'   : undecoded message payload (bytes)
+  '_dt'           : datetime.datetime instance in UTC
+  '_lt'           : datetime.datetime instance in server local time
+  '_dtepoch'      : Unix timestamp in second since the epoch    # 1392628581
+  '_dtiso'        : ISO date (UTC)                              # 2014-02-17T10:38:43.910691Z
+  '_ltiso'        : ISO date (server local time)                # 2014-02-17T10:38:43.910691Z
+  '_lthhmm'       : timestamp HH:MM (local)                     # 10:16
+  '_lthhmmss'     : timestamp HH:MM:SS (local)                  # 10:16:21
 }
 ```
 

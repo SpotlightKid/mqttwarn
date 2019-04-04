@@ -105,10 +105,12 @@ import psycopg2
 from psycopg2.pool import ThreadedConnectionPool
 
 META_KEYS = set([
+    '_dt',
     '_dtepoch',
-    '_dthhmm',
-    '_dthhmmss',
     '_dtiso',
+    '_lt',
+    '_lthhmm',
+    '_lthhmmss',
     '_ltiso',
     'payload',
     'raw_payload',
