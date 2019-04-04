@@ -7,13 +7,6 @@ import re
 
 import six
 
-try:
-    import hashlib
-    md = hashlib.md5
-except ImportError:
-    import md5
-    md = md5.new
-
 
 class Struct:
     """Convert Python dict to data object.
