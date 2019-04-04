@@ -19,7 +19,7 @@ same way. Here's an example service configuration section in ``mqttwarn.ini``:
     password = 'password'
     database = 'databasename'
     targets = {
-            'table1': ['person', 'message', 'schema']
+            'table1': ['public.person'), 'message']
         }
 
     [pq/1]
@@ -219,7 +219,7 @@ class Plugin:
         try:
             # XXX tablename not sanitized
             try:
-                schema, table_name = item.addrs[0]
+                schema, table_name = item.addrs[0].split('.', 1)
             except ValueError:
                 table_name = item.addrs[0]
                 schema = 'public'
