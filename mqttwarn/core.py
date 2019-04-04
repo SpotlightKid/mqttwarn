@@ -13,10 +13,11 @@ from inspect import isclass
 
 import paho.mqtt.client as paho
 import six
+import stopit
 
 from .context import RuntimeContext
 from .cron import PeriodicThread
-from .util import Struct, is_funcspec, load_function, timeout
+from .util import Struct, is_funcspec, load_function
 
 try:
     import json
@@ -57,7 +58,7 @@ cf = None
 mqttc = None
 
 # Initialize processor queue
-q_in = queue.Queue(maxsize=0)
+jobq = queue.Queue(maxsize=0)
 exit_flag = False
 
 # Instances of PeriodicThread objects
@@ -493,11 +494,12 @@ def send_to_targets(handler, msg):
 
         for target in (target,) if target else tuple(service_inst['targets']):
             log.debug("Message on topic '%s' routed to service '%s:%s'.", topic, service, target)
-            job = Job(1, service_inst, handler, msg, data, target)
-            q_in.put(job)
+            job = Job(prio=1, service=service_inst, target=target, handler=handler, msg=msg,
+                      data=data)
+            jobq.put(job)
 
 
-def processor(worker_id=None):
+def processor(jobq, worker_id=None, job_timeout=10):
     """Queue runner.
 
     Pull a job from the queue, find the module in charge
@@ -507,8 +509,11 @@ def processor(worker_id=None):
     conf = context.get_config
 
     while not exit_flag:
-        log.debug('Job queue has %s items to process.', q_in.qsize())
-        job = q_in.get()
+        log.debug('Job queue has %s items to process.', jobq.qsize())
+        job = jobq.get()
+
+        if job is None:
+            break
 
         service = job.service['name']
         handler = job.handler
@@ -545,29 +550,33 @@ def processor(worker_id=None):
                     text = render_template(template, data)
 
                     if text is not None:
-                        item['message'] = text
+                        item.message = text
                 except Exception as exc:
                     log.warn("Cannot render template '%s': %s", template, exc)
             else:
                 log.warn("Templating not possible because Jinja2 is not installed.")
 
-        if item['message'] or isinstance(item['message'], (float, int)):
-            st = Struct(**item)
-            notified = False
-
-            try:
-                # Run the plugin in a separate thread and kill it if it doesn't return in 10s
-                plugin = job.service['plugin']
-                notified = timeout(plugin, (job.service['srv'], st))
-            except Exception as exc:
-                log.error("Cannot invoke service for '%s': %s", service, exc)
-
-            if not notified:
-                log.warn("Notification of '%s' for '%s' FAILED or TIMED OUT.", service, topic)
+        if item.message or isinstance(item.message, (float, int)):
+            # Run the plugin in a separate thread and kill it if it doesn't return in time
+            with stopit.ThreadingTimeout(job_timeout):
+                try:
+                    result = job.service['plugin'](job.service['srv'], st)
+                except stopit.TimeoutException:
+                    log.warn("Service '%s:%s' for topic '%s' cancelled after %is timeout.",
+                             service, target, topic, job_timeout)
+                except Exception as exc:
+                    log.error("Error invoking service '%s:%s' for topic '%s': exc",
+                              service, target, topic, exc)
+                else:
+                    if isinstance(result, six.string_types):
+                        log.info("Service '%s:%s' for topic '%s' result: %s",
+                                 service, target, topic, result)
+                    elif not result:
+                        log.warn("Service '%s:%s' for topic '%s' failed.", service, target, topic)
         else:
             log.warn("Notification of '%s' for '%s' suppressed: empty message.", service, topic)
 
-        q_in.task_done()
+        jobq.task_done()
 
     log.debug("Worker thread #%s exiting...", worker_id)
 
@@ -700,7 +709,7 @@ def connect():
     # Launch worker threads to operate on queue
     log.info('Starting %s worker threads...', cf.num_workers)
     for i in range(cf.num_workers):
-        t = threading.Thread(target=processor, kwargs={'worker_id': i})
+        t = threading.Thread(target=processor, args=(jobq,), kwargs={'worker_id': i})
         t.daemon = True
         t.start()
 
@@ -790,7 +799,7 @@ def cleanup(retcode=0, frame=None):
     mqttc.disconnect()
 
     log.info("Waiting for queue to drain...")
-    q_in.join()
+    jobq.join()
 
     # Send exit signal to subsystems _after_ queue was drained
     global exit_flag

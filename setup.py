@@ -15,6 +15,7 @@ requires = [
     'jinja2>=2.8',
     'docopt>=0.6.2',
     'requests>=2.18.4',
+    'stopit>=1.1.2',
 ]
 
 extras = {

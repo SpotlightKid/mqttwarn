@@ -34,31 +34,6 @@ class Struct:
         return {k: v for k, v in six.iteritems(self.__dict__)}
 
 
-# FIXME: does not work, functions hangs until thread exits
-# http://code.activestate.com/recipes/473878-timeout-function-using-threading/
-def timeout(func, args=(), kwargs={}, timeout_secs=10, default=False):
-    import threading
-
-    class InterruptableThread(threading.Thread):
-        def __init__(self):
-            threading.Thread.__init__(self)
-            self.result = None
-
-        def run(self):
-            try:
-                self.result = func(*args, **kwargs)
-            except:  # noqa:F722
-                self.result = default
-
-    it = InterruptableThread()
-    it.start()
-    it.join(timeout_secs)
-    if it.isAlive():
-        return default
-    else:
-        return it.result
-
-
 def is_funcspec(s):
     if s and ':' in s:
         dottedpath, name = s.split(':', 1)
