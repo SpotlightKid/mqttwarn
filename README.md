@@ -12,9 +12,15 @@ for the same message.
 For example, you may wish to notify via e-mail and to Pushover of an
 alarm published as text to the MQTT topic `home/monitoring/+`.
 
-**Note:** *This fork aims to add support for Python 3. This is still work
-in progress. `mqttrun` itself can be installed and run with Python 3, but
-not all services are compatible yet.*
+**Note:** *This fork aims to make `mqtttwarn` Python 3 compatible, clean up
+its code and streamline the configuration system. The end result will probably
+introduce some changes to the configuration and the service plugin interface,
+incompatible with the official version of `mqttwarn`. Python 2 may also be
+dropped.*
+
+*This is still work in progress. `mqttwarn` itself can be installed and
+run with Python 3, but not all services are tested for Python 3
+compatibility yet.*
 
 *This is an unoffical fork. Inquiries regarding its status and features
 should only be directed to the owner of this repository, not to the
