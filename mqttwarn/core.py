@@ -113,8 +113,27 @@ class TopicHandler(object):
         return self.config.getint(self.section, 'qos', fallback=0)
 
     @lru_cache()
-    def filter(self, msg):
-        return False
+    def filter(self, topic, payload):
+        if not hasattr(self, '_filter'):
+            _filter = self.config.get(self.section, 'filter', fallback=None)
+
+            if is_funcspec(_filter):
+                dottedpath, funcname = _filter.rstrip('()').split(':', 1)
+
+                try:
+                    self._filter = load_function(dottedpath, funcname)
+                except Exception as exc:
+                    log.warn("Could not import filter function '%s' from topic handler '%s': %s",
+                             funcname, self.section, exc)
+            else:
+                self._filter = None
+
+        if self._filter:
+            try:
+                return self._filter(topic, payload)
+            except Exception as exc:
+                log.warn("Error invoking filter function for topic handler '%s': %s",
+                         self.section, exc)
 
     def decode_payload(self, msg):
         """Decode message payload through transformation machinery."""
@@ -333,7 +352,7 @@ def on_message(mosq, userdata, msg):
 
         for handler in handlers:
             # Check for any message filters
-            if handler.filter(msg):
+            if handler.filter(msg.topic, msg.payload):
                 log.debug("Filter in section [%s] has skipped message on topic '%s'.",
                           handler.section, msg.topic)
                 continue
@@ -454,7 +473,6 @@ def send_to_targets(handler, msg):
             log.debug("topic=%s, payload=%r, data=%r", topic, payload, data)
 
     targetlist = targetlist_transformed
-
     log.debug("Final target list for topic '%s': %r", topic, targetlist)
 
     for service, target in targetlist:
@@ -729,7 +747,6 @@ def connect():
                 continue
 
             try:
-
                 dottedpath, funcname = funcspec.split(':', 1)
                 func = load_function(dottedpath, funcname)
             except Exception as exc:
