@@ -97,10 +97,12 @@ __license__ = "Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-
 
 
 import json
+from contextlib import contextmanager
+from threading import BoundedSemaphore
 
 # http://initd.org/psycopg/
 import psycopg2
-
+from psycopg2.pool import ThreadedConnectionPool
 
 META_KEYS = set([
     '_dtepoch',
@@ -118,11 +120,48 @@ class ConfigurationError(Exception):
     pass
 
 
+# https://stackoverflow.com/a/53437049/390275
+
+class BlockingThreadedConnectionPool(ThreadedConnectionPool):
+    def __init__(self, minconn, maxconn, *args, **kwargs):
+        self._semaphore = BoundedSemaphore(maxconn)
+        super().__init__(minconn, maxconn, *args, **kwargs)
+
+    def getconn(self, *args, **kwargs):
+        self._semaphore.acquire()
+        return super().getconn(*args, **kwargs)
+
+    def putconn(self, *args, **kwargs):
+        super().putconn(*args, **kwargs)
+        self._semaphore.release()
+
+
 class Plugin:
     def __init__(self, srv=None, config=None):
         self.srv = srv
         self.log = srv.log
         self.config = config
+        conf = self.config.get
+        self.host = conf("host", "localhost")
+        self.port = conf("port", 5432)
+        self.user = conf("user")
+        self.password = conf("password")
+        self.database = conf("database")
+        self.db = BlockingThreadedConnectionPool(1, 4, host=self.host, port=self.port,
+                                                 database=self.database, user=self.user,
+                                                 password=self.password)
+    def close(self):
+        self.db.closeall()
+
+    __del__ = close
+
+    @contextmanager
+    def get_connection(self):
+        con = self.db.getconn()
+        try:
+            yield con
+        finally:
+            self.db.putconn(con)
 
     def add_row(self, cursor, schema, tablename, rowdata, message, fallback_col):
         # filter out keys that are not column names
@@ -172,37 +211,22 @@ class Plugin:
         cursor.execute(sql, values)
         return unknown_keys
 
-
     def plugin(self, srv, item):
         srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
-        conf = item.config.get
-        host = conf("host", "localhost")
-        port = conf("port", 5432)
-        user = conf("user")
-        password = conf("password")
-        database = conf("database")
-
         try:
             # XXX tablename not sanitized
-            table_name = item.addrs[0].format(**item.data)
-            fallback_col = item.addrs[1].format(**item.data)
-
             try:
-                schema = item.addrs[2].format(**item.data)
-            except (LookupError, NameError, ValueError, TypeError):
-                schema = "public"
-        except Exception as exc:
-            self.log.error("postgres target incorrectly configured: %s", exc)
-            return False
+                schema, table_name = item.addrs[0]
+            except ValueError:
+                table_name = item.addrs[0]
+                schema = 'public'
 
-        try:
-            conn = psycopg2.connect(host=host, port=port, user=user, password=password,
-                                    database=database)
-            cursor = conn.cursor()
-        except Exception as exc:
-            self.log.error("Could not connect to postgres data '%s' at '%s:%s': %s",
-                           database, host, port, exc)
+            table_name = table_name.format(**item.data)
+            schema = schema.format(**item.data)
+            fallback_col = item.addrs[1].format(**item.data)
+        except (LookupError, NameError, ValueError, TypeError) as exc:
+            self.log.error("postgres target incorrectly configured: %s", exc)
             return False
 
         # Create a new dict for column data and fill it with payload JSON data,
@@ -217,29 +241,33 @@ class Plugin:
                     col_data[key] = value
 
         try:
-            unknown_keys = self.add_row(cursor, schema, table_name, col_data, item.message,
-                                        fallback_col)
+            with self.get_connection() as conn:
+                try:
+                    cursor = conn.cursor()
+                    unknown_keys = self.add_row(cursor, schema, table_name, col_data, item.message,
+                                                fallback_col)
+                    conn.commit()
+                except Exception as exc:
+                    self.log.error("Could not add postgres row: %s", exc)
+                    return False
+                finally:
+                    cursor.close()
+        except psycopg2.Error as exc:
+            self.log.error("Could not connect to postgres data '%s' at '%s:%s': %s",
+                           self.database, self.host, self.port, exc)
 
-            if unknown_keys:
-                if fallback_col in unknown_keys:
-                    self.log.error("Fallback column '%s' not found in table '%s.%s'. "
-                                   "*Dropped* values of the following data keys: %s",
-                                   fallback_col, schema, table_name, ", ".join(unknown_keys))
-                elif fallback_col in item.data:
-                    self.log.error("Data for fallback column '%s' already present in payload. "
-                                   "*Dropped* values of the following data keys: %s",
-                                   fallback_col, ", ".join(unknown_keys))
-                else:
-                    self.log.warn("Data for keys '%s' written to fallback column '%s'.",
-                                  ", ".join(unknown_keys), fallback_col)
-
-            conn.commit()
-        except Exception as exc:
-            self.log.error("Could not add postgres row: %s", exc)
-            return False
-        finally:
-            cursor.close()
-            conn.close()
+        if unknown_keys:
+            if fallback_col in unknown_keys:
+                self.log.error("Fallback column '%s' not found in table '%s.%s'. "
+                               "*Dropped* values of the following data keys: %s",
+                               fallback_col, schema, table_name, ", ".join(unknown_keys))
+            elif fallback_col in item.data:
+                self.log.error("Data for fallback column '%s' already present in payload. "
+                               "*Dropped* values of the following data keys: %s",
+                               fallback_col, ", ".join(unknown_keys))
+            else:
+                self.log.warn("Data for keys '%s' written to fallback column '%s'.",
+                              ", ".join(unknown_keys), fallback_col)
 
         return True
 
