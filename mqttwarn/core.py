@@ -756,7 +756,7 @@ def connect():
                 continue
 
             try:
-                dottedpath, funcname = funcspec.split(':', 1)
+                dottedpath, funcname = funcspec.rstrip('()').split(':', 1)
                 func = load_function(dottedpath, funcname)
             except Exception as exc:
                 log.error("[cron] could not load function '%s:%s': %s", funcspec, exc)
