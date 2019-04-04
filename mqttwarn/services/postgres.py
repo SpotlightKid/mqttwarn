@@ -18,6 +18,8 @@ same way. Here's an example service configuration section in ``mqttwarn.ini``:
     user = 'username'
     password = 'password'
     database = 'databasename'
+    minconn = 0                 ; initial/minimum number of database pool connections
+    maxconn = 4                 ; maximum number of concurrent database pool connections
     targets = {
             'table1': ['public.person'), 'message']
         }
@@ -125,7 +127,7 @@ class ConfigurationError(Exception):
 # https://stackoverflow.com/a/53437049/390275
 
 class BlockingThreadedConnectionPool(ThreadedConnectionPool):
-    def __init__(self, minconn, maxconn, *args, **kwargs):
+    def __init__(self, minconn=0, maxconn=4, *args, **kwargs):
         self._semaphore = BoundedSemaphore(maxconn)
         super().__init__(minconn, maxconn, *args, **kwargs)
 
@@ -149,9 +151,18 @@ class Plugin:
         self.user = conf("user")
         self.password = conf("password")
         self.database = conf("database")
-        self.db = BlockingThreadedConnectionPool(1, 4, host=self.host, port=self.port,
-                                                 database=self.database, user=self.user,
-                                                 password=self.password)
+        self.minconn = conf("minconn", 0)
+        self.maxconn = conf("maxconn", 4)
+        self.db = BlockingThreadedConnectionPool(
+            minconn=self.minconn,
+            maxconn=self.maxconn,
+            host=self.host,
+            port=self.port,
+            database=self.database,
+            user=self.user,
+            password=self.password
+        )
+
     def close(self):
         self.db.closeall()
 
