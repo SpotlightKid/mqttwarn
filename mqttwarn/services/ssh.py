@@ -105,6 +105,7 @@ def plugin(srv, item):
     user = conf("user")
     password = conf("password")
     environment = conf("environment")
+    timeout = conf("timeout")
     command = item.addrs[0]
     args = item.data.get("args", item.message)
 
@@ -120,12 +121,20 @@ def plugin(srv, item):
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     creds = credentials(host, user=user, password=password, port=port)
 
+
+    try:
+        ssh.connect(**creds)
+    except Exception as exc:
+        srv.log.warning("Could not connect to host '%s': %s", host, exc)
+        return False
+
     try:
         srv.log.debug("Executing command '%s' on host '%s'.", command, host)
-        ssh.connect(**creds)
-        _, stdout, stderr = ssh.exec_command(command, environment=environment)
+        _, stdout, stderr = ssh.exec_command(command, timeout=timeout, environment=environment)
     except Exception as exc:
-        srv.log.warning("Cannot run command '%s' on host '%s': %s", command, host, exc)
+        srv.log.warning("Could not run command '%s' on host '%s': %s", command, host, exc)
         return False
+    finally:
+        ssh.close()
 
     return True
