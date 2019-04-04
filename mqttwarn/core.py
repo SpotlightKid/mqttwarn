@@ -143,21 +143,33 @@ class TopicHandler(object):
         return data
 
     def xform(self, field, value, data):
-        """Attempt transformation on value using value of handler section
-        option named by field as formatter.
+        """Attempt transformation on value using ``value`` of handler section
+        option named by ``field`` as formatter.
 
-        The formatter, if it is a function, is passed the value and the
-        transformation data dict and should. It's return value is returned
-        directly.
+        If formatter is a dictionary, ``data`` is ignored and ``value`` is
+        used as a key to look up the transformed value in it, which is
+        returned by this function. If no matching key is present in formatter,
+        ``value`` is returned unchanged.
 
-        If formatter is a format string, its is formatted with standard
-        string formatting (i.e. the ``format`` string method and the value
-        is passed as the first and only opistional argument to ``format``
-        and the transformation data dict as keyword arguments.
+        If formatter is a function, ``value`` and the transformation ``data``
+        dict are passed to it as positional arguments. Its return value is
+        returned by this function as the transformed value.
+
+        If formatter is a format string, it is formatted with standard
+        string formatting (i.e. the ``format`` string method) and ``value``
+        is passed as the first and only optional argument to ``format``
+        and the ``data`` transformation dict as keyword arguments.
 
         """
         if value is None:
             return None
+
+        try:
+            formatter = self.config.getdict(self.section, field, fallback=None)
+        except TypeError:
+            pass
+        else:
+            return formatter.get(value, value)
 
         formatter = self.config.get(self.section, field, fallback=None)
 
