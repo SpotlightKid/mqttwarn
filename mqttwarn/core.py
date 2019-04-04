@@ -130,15 +130,12 @@ class TopicHandler(object):
             if isinstance(payload_data, dict):
                 data.update(payload_data)
 
-        # If the topic handler section has an ``alldata`` option, which is set to
-        # an importable modulepath/function, it is called with the handler section
-        # name, the message topic and the global transformation_data.
-        # It must return a dictionary, with which the transformation data dict is
-        # then updated.
-        all_data = self.xform(msg.topic, 'alldata', data)
-
-        if all_data is not None and isinstance(all_data, dict):
-            data.update(all_data)
+        # If the topic handler section has a ``datamap`` option, which is set to
+        # an importable modulepath/function, it is called with the message topic
+        # and the global transformation_data as positional arguments.
+        # The function may update the transformation data dictionary.
+        # It's return value is ignored.
+        self.xform('datamap', msg.topic, data)
 
         return data
 
@@ -174,14 +171,15 @@ class TopicHandler(object):
         formatter = self.config.get(self.section, field, fallback=None)
 
         if is_funcspec(formatter):
-            dottedpath, funcname = formatter.split(':', 1)
+            dottedpath, funcname = formatter.rstrip('()').split(':', 1)
 
             try:
                 func = load_function(dottedpath, funcname)
             except Exception as exc:
-                log.warn("Could not import '%s' function '%s' from in topic handler '%s': %s",
+                log.warn("Could not import '%s' function '%s' from topic handler '%s': %s",
                          field, funcname, self.section, exc)
             try:
+                log.debug("Xform value with '%s' function '%s:%s'", field, dottedpath, funcname)
                 return func(value, data)
             except Exception as exc:
                 log.warn("Error invoking '%s' function '%s' defined in '%s': %s",
