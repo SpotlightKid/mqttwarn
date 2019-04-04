@@ -29,23 +29,23 @@ Suppose we create the following table for the target ``table1`` defined above:
 
 .. code-block:: postgres
 
-    CREATE TABLE person (id INTEGER, name CHARACTER VARYING(128));
+    CREATE TABLE person (id INT GENERATED ALWAYS AS IDENTITY, name VARCHAR);
 
 and publish this JSON payload:
 
 .. code-block:: bash
 
-    mosquitto_pub -t pg/1 -m '{"name": "Jane Jolie", "id" : 90, "number": 17}'
+    mosquitto_pub -t pg/1 -m '{"name": "Jane Jolie", "number": 17}'
 
 This will result in the two columns ``id`` and ``name`` being populated:
 
 .. code-block:: postgres
 
-    +------+------------+
-    | id   | name       |
-    +------+------------+
-    |   90 | Jane Jolie |
-    +------+------------+
+    +----+------------+
+    | id | name       |
+    +====+============+
+    | 1  | Jane Jolie |
+    +----+------------+
 
 The second item in a target definition of the service defines a _fallback
 column_, into which _mqttwarn_ adds the "rest of" the payload, i.e. all JSON
@@ -60,12 +60,13 @@ Publishing the same payload again, will insert this row into the table:
 
 .. code-block:: postgres
 
-    +------+------------+-------------------+
-    | id   | name       | message           |
-    +------+------------+-------------------+
-    |   90 | Jane Jolie | NULL              |
-    |   90 | Jane Jolie | { "number" : 17 } |
-    +------+------------+-------------------+
+    +----+------------+------------------+
+    | id | name       | message          |
+    +====+============+==================+
+    | 1  | Jane Jolie | NULL             |
+    +----+------------+------------------+
+    | 2  | Jane Jolie | {"number": 17}   |
+    +----+------------+------------------+
 
 As you may guess, if we add a ``number`` column to the table, it will be
 correctly populated with the value ``17`` as well.
@@ -75,11 +76,11 @@ to the _fallback column_:
 
 .. code-block:: postgres
 
-    +------+------+-------------+--------+
-    | id   | name | message     | number |
-    +------+------+-------------+--------+
-    | NULL | NULL | I love MQTT |   NULL |
-    +------+------+-------------+--------+
+    +----+------+-------------+--------+
+    | id | name | message     | number |
+    +====+======+=============+========+
+    | 3  | NULL | I love MQTT | NULL   |
+    +----+------+-------------+--------+
 
 You can add columns with the names of the built-in transformation data (e.g.
 ``_dthhmmss``) to have those values stored automatically.
