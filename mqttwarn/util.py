@@ -59,18 +59,6 @@ def timeout(func, args=(), kwargs={}, timeout_secs=10, default=False):
         return it.result
 
 
-def sanitize_function_name(s):
-    func = None
-
-    if s is not None:
-        valid = re.match(r'^[\w]+\(\)', s)
-
-        if valid:
-            func = re.sub('[()]', '', s)
-
-    return func
-
-
 def is_funcspec(s):
     if s and ':' in s:
         dottedpath, name = s.split(':', 1)
