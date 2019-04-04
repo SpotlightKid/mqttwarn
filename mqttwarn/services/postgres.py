@@ -155,7 +155,7 @@ class Plugin:
             elif not payload_keys:
                 rowdata[fallback_col] = message
 
-            if fallabck_col in rowdata:
+            if fallback_col in rowdata:
                 usable_keys.add(fallback_col)
         else:
             self.srv.log.warn("Fallback column '%s' does not exist in table '%s.%s'.",
