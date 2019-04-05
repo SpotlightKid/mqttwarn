@@ -752,20 +752,20 @@ def connect():
             if cf.has_option(section, 'target'):
                 funcspec = cf.get(section, 'target')
             else:
-                log.error("[cron] section '%s' does not specify target function.", name)
+                log.error("[cron:%s] section does not specify target function.", name)
                 continue
 
             if cf.has_option(section, 'interval'):
                 interval = cf.getfloat(section, 'interval')
             else:
-                log.error("[cron] section '%s' does not specify execution interval.", name)
+                log.error("[cron:%s] section does not specify execution interval.", name)
                 continue
 
             try:
                 dottedpath, funcname = funcspec.rstrip('()').split(':', 1)
                 func = load_function(dottedpath, funcname)
             except Exception as exc:
-                log.error("[cron] could not load function '%s:%s': %s", funcspec, exc)
+                log.error("[cron:%s] could not load function '%s': %s", name, funcspec, exc)
                 continue
 
             now = cf.getboolean(section, 'now', fallback=False)
