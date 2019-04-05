@@ -522,18 +522,24 @@ def processor(jobq, worker_id=None, job_timeout=10):
         log.debug("Processor #%s is handling '%s:%s'.", worker_id, service, target)
 
         data = job.data.copy()
+        # It's mportant to keep order of the following three calls, since they
+        # all may alter the data dict.
+        title = handler.xform('title', SCRIPTNAME, data)
+        image = handler.xform('image', '', data)
+        message = handler.xform('format', job.msg.payload_string(), data)
+
         item = Struct(
-            service=service,
-            section=handler.section,
-            target=target,
-            config=job.service['config'],
             addrs=job.service['targets'][target],
-            topic=topic,
-            payload=job.msg.payload,
+            config=job.service['config'],
             data=data,
-            title=handler.xform('title', SCRIPTNAME, data),
-            image=handler.xform('image', '', data),
-            message=handler.xform('format', job.msg.payload_string(), data)
+            image=image,
+            message=message,
+            payload=job.msg.payload,
+            section=handler.section,
+            service=service,
+            target=target,
+            title=title,
+            topic=topic
         )
 
         try:
