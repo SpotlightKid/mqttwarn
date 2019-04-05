@@ -256,7 +256,7 @@ class MQTTMessageWrapper(object):
                 # Unix timestamp in seconds since the epoch
                 '_dtepoch': dt.timestamp(),
                 # UTC timestamp, e.g. 2014-02-17T10:38:43.910691Z
-                '_dtiso': dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                '_dtiso': dt.isoformat(),
                 # Local time in iso format
                 '_ltiso': lt.isoformat(),
                 # Local time in hours and minutes, e.g. 10:16
