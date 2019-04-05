@@ -56,13 +56,21 @@ class RuntimeContext(object):
             return self.config.g(section, name)
 
     def get_handler_targets(self, section):
-        """Return list of topic handler targets or function to dynamically get targets later.
+        """Return list of topic handler targets or function.
 
-        Targets are returned as two-element tuples (service, target), where service is the
-        name of the service section to use and target a key of the targets defined by that
-        service. Target may be None or an empty string.
+        If the ``targets`` option value of the topic handler config section
+        points to a loadable function, the function is loaded and is returned.
+        It must be called on receiving a message with a topic matching the
+        handler's subscription and passed the message topic to get the dynamic
+        targets list.
 
-        Returns None if no targets are specified or the targets function cannot be imported.
+        Else, targets are returned as two-element tuples ``(service, target)``,
+        where ``service`` is the name of the service section to use and
+        ``target`` a key of the ``targets`` option dict defined in the
+        service's configuration. ``target`` may be None.
+
+        Returns None if no targets are specified or the targets function cannot
+        be imported.
 
         """
         value = self.config.g(section, 'targets', fallback=None)
