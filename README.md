@@ -6,25 +6,23 @@ To _warn_, _alert_, or _notify_.
 
 This program subscribes to any number of MQTT topics (which may include
 wildcards) and publishes received payloads to one or more notification
-services, including support for notifying more than one distinct service
-for the same message.
+services, including support for notifying more than one distinct service for
+the same message.
 
-For example, you may wish to notify via e-mail and to Pushover of an
-alarm published as text to the MQTT topic `home/monitoring/+`.
+For example, you may wish to notify via e-mail and to Pushover of an alarm
+published as text to the MQTT topic `home/monitoring/+`.
 
-**Note:** *This fork aims to make `mqtttwarn` Python 3 compatible, clean up
-its code and streamline the configuration system. The end result will probably
+**Note:** *This fork aims to make `mqtttwarn` Python 3 compatible, clean up its
+code and streamline the configuration system. The end result will probably
 introduce some changes to the configuration and the service plugin interface,
 incompatible with the official version of `mqttwarn`. Python 2 may also be
 dropped.*
 
-*This is still work in progress. `mqttwarn` itself can be installed and
-run with Python 3, but not all services are tested for Python 3
-compatibility yet.*
+*This is still work in progress. `mqttwarn` itself can be installed and run
+with Python 3, but not all services are tested for Python 3 compatibility yet.*
 
-*This is an unoffical fork. Inquiries regarding its status and features
-should only be directed to the owner of this repository, not to the
-original authors.*
+*This is an unoffical fork. Inquiries regarding its status and features should
+only be directed to the owner of this repository, not to the original authors.*
 
 _mqttwarn_ supports a number of services (listed alphabetically below):
 
@@ -98,48 +96,57 @@ _mqttwarn_ supports a number of services (listed alphabetically below):
 
 ![definition by Google](assets/mqttwarn.png)
 
-Notifications are transmitted to the appropriate service via plugins. We provide plugins for the above list of services, and you can easily add your own.
+Notifications are transmitted to the appropriate service via plugins. We
+provide plugins for the above list of services, and you can easily add your
+own.
 
-I've written an introductory post, explaining [what mqttwarn can be used for](http://jpmens.net/2014/04/03/how-do-your-servers-talk-to-you/).
+I've written an introductory post, explaining [what mqttwarn can be used
+for](http://jpmens.net/2014/04/03/how-do-your-servers-talk-to-you/).
 
 
 ## Getting started
 
-I recommend you start off with the following simple configuration which will log messages received on the MQTT topic `test/+` to a file. Create the following configuration file:
+I recommend you start off with the a simple configuration which will log
+messages received on the MQTT topic `test/+` to a file.
+
+Create the following configuration file and save it as `mqttwarn.ini`:
 
 ```ini
 [defaults]
-hostname  = 'localhost'
-port      = 1883
+hostname = 'localhost'
+port = 1883
 
 ; name the service providers you will be using.
-launch	 = file, log
+launch = file, log
 
 [config:file]
 append_newline = True
 targets = {
-    'mylog'     : ['/tmp/mqtt.log']
+        'mylog': ['/tmp/mqtt.log']
     }
 
 [config:log]
 targets = {
-    'info'   : [ 'info' ]
-  }
+        'info': ['info']
+    }
 
 [test/+]
 targets = file:mylog, log:info
 ```
 
-**Note**: the closing brace `}` of the `targets` dict must be indented; this is an artifact of ConfigParser.
+**Note**: the closing brace `}` of the `targets` dict must be indented; this is
+an artifact of ConfigParser.
 
-Launch `mqttwarn.py` and keep an eye on its log file (`mqttwarn.log` by default). Publish two messages to the subscribed topic, using
+Launch `mqttwarn.py` and keep an eye on its log file (`mqttwarn.log` by
+default). Publish two messages to the subscribed topics, using
 
 ```
 mosquitto_pub -t test/1 -m "Hello"
 mosquitto_pub -t test/name -m '{ "name" : "Jane" }'
 ```
 
-and our output file `/tmp/mqtt.log` should contain the payload of both messages:
+and our output file `/tmp/mqtt.log` should contain the payload of both
+messages:
 
 ```shell
 Hello
@@ -151,12 +158,16 @@ Both payloads where copied verbatim to the target.
 Stop _mqttwarn_, and add the following line to the `[test/+]` section:
 
 ```ini
-format  = -->{name}<--
+format = -->{name}<--
 ```
 
-What we are configuring _mqttwarn_ to do here, is to try and decode the incoming JSON payload and format the output in such a way as that the JSON `name` element is copied to the output (surrounded with a bit of sugar to illustrate the fact that we can output whatever text we want).
+What we are configuring _mqttwarn_ to do here, is to try and decode the
+incoming JSON payload and format the output in such a way as that the JSON
+`name` element is copied to the output (surrounded with a bit of sugar to
+illustrate the fact that we can output whatever text we want).
 
-If you repeat the publish of the second message, you should see the following in your output file `/tmp/mqtt.log`:
+If you repeat the publish of the second message, you should see the following
+in your output file `/tmp/mqtt.log`:
 
 ```
 -->Jane<--
@@ -164,43 +175,48 @@ If you repeat the publish of the second message, you should see the following in
 
 ## The `[defaults]` section
 
-Most of the options in the configuration file have sensible defaults, and/or ought to be self-explanatory:
+Most of the options in the configuration file have sensible defaults, and/or
+ought to be self-explanatory. The values shown here are the default settings.
 
 ```ini
 [defaults]
-hostname      = 'localhost'         ; default
-port          = 1883
-transport     = 'tcp'
-protocol      = 4                   ; MQTTv31 = 3, MQTTv311 = 4 (default)
-username      = None
-password      = None
-client_id     = 'mqttwarn'
-lwt           = 'clients/mqttwarn'  ; lwt payload is '0' or '1'
-skipretained  = True
+hostname = 'localhost'
+port = 1883
+transport = 'tcp'
+; MQTTv31 = 3, MQTTv311 = 4 (default)
+protocol = 4
+username = None
+password = None
+client_id = 'mqttwarn'
+; lwt payload is '0' or '1'
+lwt = 'clients/mqttwarn'
+skipretained = False
 clean_session = False
 
 ; logging
-logformat = '%(asctime)-15s %(levelname)-5s [%(module)s] %(message)s'
-logfile   = 'mqttwarn.log'
+logformat = '%(asctime)-15s %(levelname)-8s [%(name)-25s] %(message)s'
+logfile = 'mqttwarn.log'
 
 ; one of: CRITICAL, DEBUG, ERROR, INFO, WARN
-loglevel     = DEBUG
-
-; path to file containing self-defined functions for formatmap, alldata, and datamap
-functions = 'myfuncs.py'
+loglevel = DEBUG
 
 ; name the service providers you will be using.
-launch   = file, log, osxnotify, mysql, smtp
+launch = file, log, osxnotify, mysql, smtp
 
 ; the directory to which we should cd after startup (default: ".")
 ; the cd is performed before loading service plugins, so it should
 ; contain a `services/' directory with the required service plugins.
-directory = /tmp/
+directory = /tmp
 
+; optional: TLS parameters.
 
-; optional: TLS parameters. (Don't forget to set the port number for
-; TLS (probably 8883).
-; You will need to set at least `ca_certs' if you want TLS support
+tls = False
+ca_certs = None
+certfile = None
+keyfile = None
+tls_version = None
+tls_insecure = False
+
 ; ca_certs: path to the Certificate Authority certificate file (concatenated
 ;           PEM file)
 ; tls_version: currently either 'tlsv1' or 'sslv3'
@@ -208,57 +224,63 @@ directory = /tmp/
 ;               broker's certificate CN
 ; certfile: path to PEM encode client certificate file
 ; keyfile: path to PEM encode client private key file
-ca_certs = '/path/to/ca-certs.pem'
-certfile = '/path/to/client.crt'
-keyfile = '/path/to/client.key'
-tls_version = 'tlsv1'
-tls_insecure = False
+;
+; You will need to set at least `ca_certs' if you want TLS support and then
+; set the 'tls' option to True.
+; Don't forget to set the port number for TLS (commonly 8883).
+;
+; Example settings:
+;ca_certs = '/path/to/ca-certs.pem'
+;certfile = '/path/to/client.crt'
+;keyfile = '/path/to/client.key'
+;tls_version = 'tlsv1'
 
 ```
 
-### `functions`
-
-The `functions` option specifies the path to a Python file containing functions you use in formatting or filtering data (see below). The `.py` extension to the path name you configure here must be specified.
-
 ### `launch`
 
-In the `launch` option you specify which _services_ (of those available in the `services/` directory of _mqttwarn_ or using the `module` option, see the following paragraphs) you want to be able to use in target definitions.
+In the `launch` option you specify which _services_ (of those available in the
+`services/` directory of _mqttwarn_ or using the `module` option, see the
+following paragraphs) you want to be able to use in target definitions.
 
 ## The `[config:xxx]` sections
 
-Sections called `[config:xxx]` configure settings for a service _xxx_. Each of these sections
-has a mandatory option called `targets`, which is a dictionary of target names, each
-pointing to an array of "addresses". Address formats depend on the particular service.
+Sections called `[config:xxx]` configure settings for a service _xxx_. Each of
+these sections has a mandatory option called `targets`, which is a dictionary
+of target names, each pointing to an array of "addresses". Address formats
+depend on the particular service.
 
 A service section may have an option called `module`, which refers to the name
 of the actual service module to use. A service called `filetruncate` - and
-referenced as such in the `launch` option -
-may have `module = file`, in which case the service works like a regular `file`
-service, with its own distinct set of service options. It is thus possible to
-have several different service configurations for the same underlying service,
-with different configurations, e.g. one for files that should have notifications
-appended, and one for files that should get truncated before writes.
+referenced as such in the `launch` option - may have `module = file`, in which
+case the service works like a regular `file` service, with its own distinct set
+of service options. It is thus possible to have several different service
+configurations for the same underlying service, with different configurations,
+e.g. one for files that should have notifications appended, and one for files
+that should get truncated before writes.
 
-As an example for `module` consider this INI file in which we want two services of type log. We actually _launch_ an `xxxlog` (which doesn't physically exist), but due to the `module=log` setting in its configuration it is instantiated:
+As an example for `module` consider this INI file in which we want two services
+of type log. We actually _launch_ an `xxxlog` (which doesn't physically exist),
+but due to the `module=log` setting in its configuration it is instantiated:
 
 ```ini
 [defaults]
-hostname  = 'localhost'  ; default
-port      = 1883
+hostname = 'localhost'  ; default
+port = 1883
 
-launch	 = log, xxxlog
+launch = log, xxxlog
 
 [config:log]
 targets = {
-    'debug'  : [ 'debug' ],
-  }
+        'debug': ['debug'],
+    }
 
 [config:xxxlog]
 # Note how the xxxlog is instantiated from log and both must be launched
 module = log
 targets = {
-    'debug'  : [ 'debug' ],
-  }
+        'debug': ['debug'],
+    }
 
 
 [topic/1]
@@ -267,11 +289,17 @@ targets = log:debug, xxxlog:debug
 
 ## The `[failover]` section
 
-There is a special section (optional) for defining a target (or targets) for internal error conditions. Currently there is only one error handled by this logic, broker disconnection.
+There is a special section (optional) for defining a target (or targets) for
+internal error conditions. Currently there is only one error handled by this
+logic, broker disconnection.
 
-This allows you to setup a target for receiving errors generated within _mqttwarn_. The message is handled like any other with an error code passed as the `topic` and the error details as the `message`. You can use formatting and transformations as well as filters, just like any other _topic_.
+This allows you to setup a target for receiving errors generated within
+_mqttwarn_. The message is handled like any other with an error code passed as
+the `topic` and the error details as the `message`. You can use formatting and
+transformations as well as filters, just like any other _topic_.
 
-Below is an example which will log any failover events to an error log, and display them on all XBMC targets:
+Below is an example which will log any failover events to an error log, and
+display them on all XBMC targets:
 
 ```ini
 [failover]
@@ -281,11 +309,13 @@ title    = mqttwarn
 
 ## The `[__topic__]` sections
 
-All sections not called `[defaults]` or `[config:xxx]` are treated as MQTT topics
-to subscribe to. _mqttwarn_ handles each message received on this subscription
-by handing it off to one or more service targets.
+All sections not called `[defaults]` or `[config:xxx]` are treated as MQTT
+topics to subscribe to. _mqttwarn_ handles each message received on this
+subscription by handing it off to one or more service targets.
 
-The section name is the topic name (can be overridden using the `topic` option). Consider the following example:
+The section name by default is used as the the topic subscription pattern, but
+the latter can be overridden using the `topic` option. Consider the following
+example:
 
 ```ini
 [icinga/+/+]
@@ -295,29 +325,40 @@ targets = log:info, file:f01, mysql:nagios
 targets = mysql:m1, log:info
 ```
 
-MQTT messages received at `icinga/+/+` will be directed to the three specified targets, whereas messages received at `my/special` will be stored in a `mysql` target and will be `log`ged at level "INFO".
+MQTT messages received at `icinga/+/+` will be directed to the three specified
+targets, whereas messages received at `my/special` will be stored in a `mysql`
+target and will be `log`ged at level "INFO".
 
-If more then one section is matching the topic then message will be handled to targets in all matching sections.
+If more then one section is matching the topic then message will be handled to
+targets in all matching sections.
 
-Targets can be also defined as a dictionary containing the pairs of topic and targets. In that case message matching the section can be dispatched in more flexible ways to selected targets. Consider the following example:
+Targets can be also defined as a dictionary containing the pairs of topic and
+targets. In that case message matching the section can be dispatched in more
+flexible ways to selected targets. Consider the following example:
 
 ```ini
 [#]
 targets = {
-    '/#': 'file:0',
-    '/test/#': 'file:1',
-    '/test/out/#': 'file:2',
-    '/test/out/+': 'file:3',
-    '/test/out/+/+': 'file:4',
-    '/test/out/+/state': 'file:5',
-    '/test/out/FL_power_consumption/state': [ 'file:6', 'file:7' ],
-    '/test/out/BR_ambient_power_sensor/state': 'file:8',
-  }
+        '/#': 'file:0',
+        '/test/#': 'file:1',
+        '/test/out/#': 'file:2',
+        '/test/out/+': 'file:3',
+        '/test/out/+/+': 'file:4',
+        '/test/out/+/state': 'file:5',
+        '/test/out/FL_power_consumption/state': ['file:6', 'file:7'],
+        '/test/out/BR_ambient_power_sensor/state': 'file:8',
+    }
 ```
 
-With the message dispatching configuration the message is dispatched to the targets matching the most specific topic. If the message is received at `/test/out/FL_power_consumption/state` it will be directed to `file:6` and `file:7` targets only. Message received at `/test/out/AR_lamp/state` will be directed to `file:5`, but received at `/test/out/AR_lamp/command` will go to `file:4`.
-The dispatcher mechanism is always trying to find the most specific match.
-It allows to define the wide topic with default targets while some more specific topic can be handled differently. It gives additional flexibility in a message routing.
+With the message dispatching configuration the message is dispatched to the
+targets matching the most specific topic. If the message is received at
+`/test/out/FL_power_consumption/state` it will be directed to `file:6` and
+`file:7` targets only. Message received at `/test/out/AR_lamp/state` will be
+directed to `file:5`, but received at `/test/out/AR_lamp/command` will go to
+`file:4`. The dispatcher mechanism is always trying to find the most specific
+match. It allows to define the wide topic with default targets while some more
+specific topic can be handled differently. It gives additional flexibility in a
+message routing.
 
 Each of these sections has a number of optional (`O`) or mandatory (`M`)
 options:
@@ -339,19 +380,28 @@ options:
 
 ## Transformation
 
-In addition to passing the payload received via MQTT to a service, _mqttwarn_ allows you do do the following:
+In addition to passing the payload received via MQTT to a service, _mqttwarn_
+allows you do do the following:
 
-* Transform payloads on a per/topic basis. For example, you know you'll be receiving JSON, but you want to warn with a nicely formatted message.
-* For certain services, you can change the _title_ (or _subject_) of the outgoing message.
+* Transform payloads on a per-topic hanlder basis. For example, you know you'll
+  be receiving JSON, but you want to pass a a nicely formatted message string
+  to the service target.
+* For certain services, you can change the _title_ (or _subject_) of the
+  outgoing message.
 * For certain services, you can change the _priority_ of the outgoing message.
 
 Consider the following JSON payload published to the MQTT broker:
 
 ```shell
-mosquitto_pub -t 'osx/json' -m '{"fruit":"banana", "price": 63, "tst" : "1391779336"}'
+mosquitto_pub -t 'osx/json' -m \
+    '{"fruit": "banana", "price": 63, "tst": "1391779336"}'
 ```
 
-Using `format` we can configure _mqttwarn_ to transform that JSON into a different outgoing message which is the text that is actually notified. Part of said `format` looks like this in the configuration file, and basically specifies that messages published to `osx/json` should be transformed as on the right-hand side.
+Using `format` we can configure _mqttwarn_ to transform that JSON into a
+different outgoing message which is the text that is actually notified. Part of
+said `format` looks like this in the configuration file, and basically
+specifies that messages published to `osx/json` should be transformed as on the
+right-hand side.
 
 ```ini
 format = "I'll have a {fruit} if it costs {price}"
@@ -363,39 +413,56 @@ The result is:
 
 ![OSX notifier](assets/osxnotify.jpg)
 
-You associate MQTT topic branches to applications in the configuration file (copy `mqttwarn.ini.sample` to `mqttwarn.ini` for use). In other words, you can accomplish, say, following mappings:
+You associate MQTT topic branches to applications in the configuration file
+(copy `mqttwarn.ini.sample` to `mqttwarn.ini` for use). In other words, you can
+accomplish, say, following mappings:
 
-* PUBs to `owntracks/jane/iphone` should be notified via Pushover to John's phone
-* PUBs to `openhab/temperature` should be Tweeted
-* PUBs to `home/monitoring/alert/+` should notify Twitter, Mail, and Prowl
+* PUBs to `owntracks/jane/iphone` should be notified via Pushover to John's
+  phone.
+* PUBs to `openhab/temperature` should be tweeted.
+* PUBs to `home/monitoring/alert/+` should notify Twitter, Mail, and Prowl.
 
 See details in the config sample for how to configure this script.
-The path to the configuration file (which must be valid Python) is obtained from the `MQTTWARNINI` environment variable which defaults to `mqttwarn.ini` in the current directory.
+
+The path to the configuration file (which must be valid Python) is obtained
+from the `MQTTWARNINI` environment variable which defaults to `mqttwarn.ini` in
+the current directory.
 
 
 ## Configuration of service plugins
 
-Service plugins are configured in the main `mqttwarn.ini` file. Each service has a mandatory _section_ named `[config:xxx]`, where `xxx` is the name of the service. This section _may_ have some settings which are required for a particular service, and all services have an rarely used option called `module` (see [The config:xxx sections](#the-configxxx-sections)) and one mandatory option called `targets`. This defines individual "service points" for a particular service, e.g. different paths for the `file` service, distinct database tables for `mysql`, etc.
+Service plugins are configured in the main `mqttwarn.ini` file. Each service
+has a mandatory _section_ named `[config:xxx]`, where `xxx` is the name of the
+service. This section _may_ have some settings which are required for a
+particular service, and all services have an rarely used option called `module`
+(see [The config:xxx sections](#the-configxxx-sections)) and one mandatory
+option called `targets`. This defines individual "service points" for a
+particular service, e.g. different paths for the `file` service, distinct
+database tables for `mysql`, etc.
 
-We term the array for each target an "address list" for the particular service. These may be path names (in the case of the `file` service), topic names (for outgoing `mqtt` publishes), hostname/port number combinations for `xbmc`, etc.
+We term the array for each target an "address list" for the particular service.
+These may be path names (in the case of the `file` service), topic names (for
+outgoing `mqtt` publishes), hostname/port number combinations for `xbmc`, etc.
+
 
 ### `amqp`
 
-The `amqp` service basically implements an MQTT to AMQP gateway which is a little bit
-overkill as, say, RabbitMQ already has a pretty versatile MQTT plugin. The that as it
-may, the configuration is as follows:
+The `amqp` service basically implements an MQTT to AMQP gateway which is a little bit overkill as,
+say, RabbitMQ already has a pretty versatile MQTT plugin. Be that as it may, the configuration is
+as follows:
 
 ```ini
 [config:amqp]
-uri     =  'amqp://user:password@localhost:5672/'
-    'test01'     : [ 'name_of_exchange',    'routing_key' ],
+uri = 'amqp://user:password@localhost:5672/'
+targets = {
+        'test01': ['name_of_exchange', 'routing_key'],
     }
 ```
 
-The exchange specified in the target configuration must exist prior to using this
-target.
+The exchange specified in the target configuration must exist prior to using this target.
 
 Requires: [Puka](https://github.com/majek/puka/) (`pip install puka`)
+
 
 ### `apns`
 
@@ -823,7 +890,8 @@ Requires:
 
 ### `gss2`
 
-The `gss2` service interacts directly with a Google Docs Spreadsheet. Each message can be written to a row in a selected worksheet.
+The `gss2` service interacts directly with a Google Docs Spreadsheet. Each message can be written
+to a row in a selected worksheet.
 
 Each target has two parameters:
 
@@ -842,11 +910,15 @@ targets = {
     }
 ```
 
-Note: It is important that the top row into your blank spreadsheet has column headings that correspond the values that represent your dictionary keys. If these column headers are not available or different from the dictionary keys, the new rows will be empty.
+Note: It is important that the top row into your blank spreadsheet has column headings that
+correspond the values that represent your dictionary keys. If these column headers are not
+available or different from the dictionary keys, the new rows will be empty.
 
-Note: Google Spreadsheets initially consist of 100 or 1,000 empty rows. The new rows added by `gss2` will be *below*, so you might want to delete those empty rows.
+Note: Google Spreadsheets initially consist of 100 or 1,000 empty rows. The new rows added by
+`gss2` will be *below*, so you might want to delete those empty rows.
 
-Other than `gss`, `gss2` uses OAuth 2.0 authentication. It is a lot harder to get working - but it does actually work.
+Other than `gss`, `gss2` uses OAuth 2.0 authentication. It is a lot harder to get working - but it
+does actually work.
 
 Here is an overview how the authentication with Google works:
 
@@ -863,32 +935,41 @@ Here is an overview how the authentication with Google works:
    but it does not harm to leave it there.
 
 Now to the details of this process:
-The contents of the file `client_secrets_filename` needs to be obtained by you as described in the [Google Developers API Client Library for Python docs](https://developers.google.com/api-client-library/python/auth/installed-app) on OAuth 2.0 for an Installed Application.
-Unfortunately, [Google prohibits](http://stackoverflow.com/a/28109307/217001) developers to publish their credentials as part of open source software. So you need to get the credentials yourself.
+
+The contents of the file `client_secrets_filename` needs to be obtained by you as described in the
+[Google Developers API Client Library for Python docs](https://developers.google.com/api-client-library/python/auth/installed-app) on OAuth 2.0 for
+an Installed Application. Unfortunately, [Google prohibits](http://stackoverflow.com/a/28109307/217001)
+developers to publish their credentials as part of open source software. So you need to get the
+credentials yourself.
 
 To get them:
 
-1. Log in to the Google Developers website from
-  [here](https://developers.google.com/).
-1. Follow the instructions in section `Creating application credentials` from
-  the [OAuth 2.0 for Installed Applications](https://developers.google.com/api-client-library/python/auth/installed-app#creatingcred) chapter.
-  You are looking for an `OAuth client ID`.
+1. Log in to the Google Developers website from [here](https://developers.google.com/).
+1. Follow the instructions in section `Creating application credentials` from the
+   [OAuth 2.0 for Installed Applications](https://developers.google.com/api-client-library/python/auth/installed-app#creatingcred)
+   chapter. You are looking for an `OAuth client ID`.
 1. In the [Credentials screen of the API manager](https://console.developers.google.com/apis/credentials)
-  there is a download icon next to your new client ID. The downloaded
-  file should be named something like `client_secret_664...json`.
-1. Store that file near e.g. `mqttwarn.ini` and ensure the setting
-  `client_secrets_filename` has the valid path name of it.
+   there is a download icon next to your new client ID. The downloaded file should be named
+   something like `client_secret_664...json`.
+1. Store that file near e.g. `mqttwarn.ini` and ensure the setting `client_secrets_filename` has
+   the valid path name of it.
 
-Then you start with the `gss2` service enabled and with the `client_secrets_filename` readable. Once an event is to be published, you will find an error in the logs with a URL that you need to visit with a web browser that is logged into your Google account. Google will offer you to accept access to
-Google Docs/Drive. Once you accept, you get to copy a code that you need to paste into field `oauth2_code` and restart mqttwarn.
+Then you start with the `gss2` service enabled and with the `client_secrets_filename` readable.
+Once an event is to be published, you will find an error in the logs with a URL that you need to
+visit with a web browser that is logged into your Google account. Google will offer you to accept
+access to Google Docs/Drive. Once you accept, you get to copy a code that you need to paste into
+field `oauth2_code` and restart mqttwarn.
 
-The file defined in `oauth2_storage_filename` needs to be missing or writable and will be created or overwritten. Once OAuth credentials have been established (using the `oauth2_code`), they are persisted in there.
+The file defined in `oauth2_storage_filename` needs to be missing or writable and will be created
+or overwritten. Once OAuth credentials have been established (using the `oauth2_code`), they are
+are persisted in there.
 
 Requires:
 * [google-api-python-client](https://pypi.python.org/pypi/google-api-python-client/)
   (`pip install google-api-python-client`)
 * [gspread](https://github.com/burnash/gspread)
   (`pip install gspread`)
+
 
 ### `hangbot`
 
@@ -2545,21 +2626,23 @@ Creating new plugins is rather easy, and I recommend you take the `file` plugin
 and start from that.
 
 Plugins are invoked with two arguments (`srv` and `item`). `srv` is an object
-with some helper functions, and `item` a dict which contains information on the message
-which is to be handled by the plugin. `item` contains the following elements:
+with some helper functions, and `item` a dict which contains information on the
+message which is to be handled by the plugin. `item` contains the following
+elements:
 
 ```python
 item = {
-    'service'       : 'string',       # name of handling service (`twitter`, `file`, ..)
-    'target'        : 'string',       # name of target (`o1`, `janejol`) in service
-    'addrs'         : <list>,         # list of addresses from SERVICE_targets
-    'config'        : dict,           # None or dict from SERVICE_config {}
-    'topic'         : 'string',       # incoming topic branch name
-    'payload'       : <payload>       # raw message payload
-    'message'       : 'string',       # formatted message (if no format string then = payload)
-    'data'          : None,           # dict with transformation data
-    'title'         : 'mqttwarn',     # possible title from title{}
-    'priority'      : 0,              # possible priority from priority{}
+    'addrs': <list>,      # list of addresses from *service* targets
+    'config': dict,       # None or dict from *service* config
+    'data': None,         # dict with transformation data
+    'message': 'string',  # formatted message (if no format string then = payload as a string)
+    'payload': <payload>  # raw message payload as bytes
+    'priority': 0,        # possible priority from priority{}
+    'section': 'string',  # name/topic of handler section, which triggered service
+    'service': 'string',  # name of handling service (`twitter`, `file`, ..)
+    'target': 'string',   # name of target (`o1`, `janejol`) in service
+    'title': 'mqttwarn',  # possible title from title{}
+    'topic': 'string',    # matched message topic
 }
 ```
 
@@ -2567,57 +2650,55 @@ item = {
 
 ### JSON output serialization
 
-When receiving JSON data like `{"data": {"humidity": 62.18}}`, you might
-want to extract values using the `format` mechanism before forwarding
-it to other data sinks, like
+When receiving JSON data like `{"data": {"humidity": 62.18}}`, you might want
+to extract values or transform the data before forwarding it to a service.
+To achive this, you can set the `format` option of a handler section to a
+function specifier. The function will receive the message payload as a string
+and a transformation data dict (see below) as arguments.
+
+Example:
 
 ```ini
 format = "{data}"
 ```
 
-However, the outcome will be the string-serialized form of the Python
-representation: `{u'humidity': 62.18}`, which could not be what you
-want if your data sink is expecting JSON format again.
-
-To achieve this, you should use appropriate type coercion before
-formatting, like
-
-```ini
-format = "{data!j}"
-```
-
-This will serialize the formatted data to JSON format appropriately,
-so the outcome will be `{"humidity": 62.18}`.
-
-
 ### Transformation data
 
-_mqttwarn_ can transform an incoming message before passing it to a plugin service.
-On each message, _mqttwarn_ attempts to decode the incoming payload from JSON. If
-this is possible, a dict with _transformation data_ is made available to the
-service plugins as `item.data`.
+_mqttwarn_ can transform an incoming message before passing it to a plugin
+service. On each message, _mqttwarn_ attempts to decode the incoming payload
+from JSON. If this is possible, a dict with _transformation data_ is made
+available to the service plugins as `item.data`.
 
-This transformation data is initially set up with some built-in values, in addition
-to those decoded from the incoming JSON payload. The following built-in variables
-are defined in `item.data`:
+This transformation data is initially set up with some built-in values, in
+addition to those decoded from the incoming JSON payload. The following
+built-in variables are defined in `item.data`:
 
 ```python
 {
-  'topic'         : message topic (string)
-  'payload'       : message payload (string)
-  'raw_payload'   : undecoded message payload (bytes)
-  '_dt'           : datetime.datetime instance in UTC
-  '_lt'           : datetime.datetime instance in server local time
-  '_dtepoch'      : Unix timestamp in second since the epoch    # 1392628581
-  '_dtiso'        : ISO date (UTC)                              # 2014-02-17T10:38:43.910691Z
-  '_ltiso'        : ISO date (server local time)                # 2014-02-17T10:38:43.910691Z
-  '_lthhmm'       : timestamp HH:MM (local)                     # 10:16
-  '_lthhmmss'     : timestamp HH:MM:SS (local)                  # 10:16:21
+    # message topic (string)
+    'topic': '/test/hello'
+    # message payload (string)
+    'payload': 'hello world'
+    # undecoded message payload (bytes)
+    'raw_payload': b'hello world'
+    # current time as datetime.datetime instance in UTC
+    '_dt': datetime.datetime(2019, 4, 5, 14, 7, 25, 796987)
+    # current time as datetime.datetime instance in server local time
+    '_lt': datetime.datetime(2019, 4, 5, 16, 9, 12, 126279)
+    # Unix timestamp in second since the epoch (197-01-01 00:00:00)
+    '_dtepoch': 1554466187.755436
+    # ISO date (UTC)
+    '_dtiso': '2019-04-05T14:07:25.796987'
+    # ISO date (server local time)
+    '_ltiso': '2019-04-05T16:07:25.796987'
+    # timestamp HH:MM (server local time)
+    '_lthhmm': '16:07'
+    # timestamp HH:MM:SS (server local time)
+    '_lthhmmss': '16:07:25'
 }
 ```
 
-Any of these values can be used in `format` to create custom outgoing
-messages.
+Any of these values can be used in `format` to create custom outgoing messages.
 
 ```ini
 format = I'll have a {fruit} if it costs {price} at {_dthhmm}
@@ -2626,29 +2707,34 @@ format = I'll have a {fruit} if it costs {price} at {_dthhmm}
 
 ### Using functions to replace incoming payloads
 
-Consider the following configuration snippet in addition to the configuration
-of the `mqtt` service shown above:
+Suppose we define the following function in a module file named `myhelper.py`
+placed in the same directory as the configuration file:
 
 ```python
-def lookup_data(data, srv=None):
-    if type(data) == dict and 'fruit' in data:
-            return "Ananas"
+def lookup_data(payload, data, srv):
+    if isinstance(data,  dict) and 'fruit' in data:
+        return "Ananas"
     return None
 ```
 
-Then, in the section defining the topic we listen on:
+Consider the following configuration snippet in addition to the configuration
+of the `mqtt` service shown above, where define the follwoing topic handler
+section:
 
 ```ini
 ...
 [test/topic]
 #format =  Since when does a {fruit} cost {price}?
-format =  lookup_data()
+format = myhelpers:lookup_data()
 ```
 
-We've replaced the `formatmap` entry for the topic by a function which you
-define within the _functions_ file you configure as `functions` in `mqttwarn.ini` configuration file. These functions
-are invoked with decoded JSON `data` passed to them as a _dict_. The string returned
-by the function returned string replaces the outgoing `message`:
+We've replaced the `format` option for the topic by a function speification
+consisting of a module in *dotted-path* notation and a function name, separated
+by a colon and suffixed with empty parentheses. These functions are invoked
+with the message payload decoded as a string and the `data` transformation
+dict, which includes any data from the message payload decoded as JSON.
+
+The return value of the function replaces the outgoing `message`:
 
 ```
 in/a1 {"fruit":"pineapple", "price": 131, "tst" : "1391779336"}
@@ -2656,119 +2742,133 @@ out/food Ananas
 out/fruit/pineapple Ananas
 ```
 
-If a function operating on a message (i.e. within `format =`) returns `None` or an empty string, the target notification is suppressed.
+If a function operating on a message (i.e. within `format =`) returns `None` or
+an empty string, the target notification is suppressed.
 
-The optional `srv` is an object with some helper functions. In particular, these allow us to use _mqttwarn_'s logging and MQTT publish functions, as in this example:
+The optional `srv` argument is an object with some helper functions. In
+particular, these allow us to use _mqttwarn_'s logging and MQTT publish
+functions, as in this example:
 
 ```python
-def p01Format(data, srv):
+def p01Format(payload, data, srv):
+    srv.log.info("+++++++++++ HUHU")
     s = "p01-HOLA"
-
-    srv.logging.info("+++++++++++ HUHU")
-
     srv.mqttc.publish("p01/RESPonse", s, qos=0, retain=False)
-
     return s
 ```
 
-Be advised that if you MQTT publish back to the same topic which triggered the invocation
-of your function, you'll create an endless loop.
+Be advised that if you MQTT publish back to the same topic which triggered the
+invocation of your function, you'll create an endless loop.
+
 
 ### Incorporating topic names into transformation data
 
-An MQTT topic branch name contains information you may want to use in transformations.
-As a rather extreme example, consider the [OwnTracks] program (the
-artist formerly known as _MQTTitude_).
+An MQTT topic branch name contains information you may want to use in
+transformations. As a interesting example, consider the [OwnTracks] program
+(the artist formerly known as _MQTTitude_).
 
-When an [OwnTracks] device detects a change of a configured waypoint or geo-fence (a region monitoring a user can set up on the device), it emits a JSON payload which looks like this, on a topic name consisting of `owntracks/_username_/_deviceid_`:
+When an [OwnTracks] device detects a change of a configured waypoint or
+geo-fence (a region monitoring a user can set up on the device), it publishes
+a message on a topic name consisting of `owntracks/_username_/_deviceid_` with
+a JSON payload which looks like this,
 
 ```
-owntracks/jane/phone -m '{"_type": "location", "lat": "52.4770352" ..  "desc": "Home", "event": "leave"}'
+Topic: owntracks/jane/phone
+Payload: '{"_type": "location", "lat": "52.4770352", ...,  "desc": "Home", "event": "leave"}'
 ```
 
-In order to be able to obtain the username (`jane`) and her device name (`phone`) for use
-in transformations (see previous section), we would ideally want to parse the MQTT topic name and add that to the item data our plugins obtain. Yes, we can.
+In order to be able to obtain the username (`jane`) and her device name
+(`phone`) for use in transformations (see previous section), we would ideally
+want to parse the MQTT topic name and add that to the item data our plugins
+obtain. Yes, we can.
 
-An optional `datamap` in our configuration file defines the name of a function we provide, also in the configuration file, which accomplishes that.
+An optional `datamap` option in a topic handler section in the configuration
+file defines the name of a function we provide in an importable module
+(in this example the module is in a file named `owntracks_helpers.py` in the
+same directory as the configuation file):
 
 ```ini
 [owntracks/jane/phone]
-datamap = OwnTracksTopicDataMap()
+datamap = owntracks_helpers:owntracks_datamap()
 ```
 
-This specifies that when a message for the defined topic `owntracks/jane/phone` is processed, our function `OwnTracksTopicDataMap()` should be invoked to parse that. (As usual, topic names may contain MQTT wildcards.)
+This specifies that when a message for the defined topic `owntracks/jane/phone`
+is processed, our function `owntracks_datamap` should be invoked to parse that.
+The function receives the message topic string and ta transformation data
+dict as arguments. The function may modify the `data` dict to add, change, or
+remove entries.
 
 The function we define to do that is:
 
 ```python
-def OwnTracksTopicDataMap(topic):
-    if type(topic) == str:
-        try:
-            # owntracks/username/device
-            parts = topic.split('/')
-            username = parts[1]
-            deviceid = parts[2]
-        except:
-            deviceid = 'unknown'
-            username = 'unknown'
-        return dict(username=username, device=deviceid)
-    return None
+def owntracks_datamap(topic, data):
+    try:
+        # owntracks/username/device
+        _, username, device = topic.split('/', 2)
+    except ValueError:
+        username = 'unknown'
+        device = 'unknown'
+
+    data.update(dict(username=username, device=device))
 ```
 
-The returned _dict_ is merged into the transformation data, i.e. it is made available to plugins and to transformation rules (`format`). If we then create the following rule
+If we then create the following rule:
 
 ```ini
 format = {username}: {event} => {desc}
 ```
 
-the above PUBlish will be transformed into
+the above PUBlish will be transformed into:
 
 ```
 jane: leave => Home
 ```
 
-### Merging more data ###
-
-The optional `alldata` function you write and configure on a per/topic basis, is
-passed the message _topic_, its _data_ and an optional _srv_ object. This function
-should return a _dict_ (or _None_) of data which is merged into the whole
-list of transformation data. This expands on the two other transformation functions
-to make topic and the message's payload available simultaneously.
-
 
 ### Using transformation data in other contexts ###
 
-Beside using the transformation data dictionary in `format` to create custom outgoing messages,
-it can be used in other contexts as well. Let's have a look at different ways this can be
-used throughout _mqttwarn_.
+Beside using the transformation data dictionary in `format` to create custom
+outgoing messages, it can be used in other contexts as well. Let's have a look
+at different ways this can be used throughout _mqttwarn_.
+
 
 #### Topic targets ####
 
-By incorporating transformation data into topic targets, we can make _mqttwarn_ dispatch
-messages dynamically based on the values of the transformation data dictionary.
+By incorporating transformation data into topic targets, we can make _mqttwarn_
+dispatch messages dynamically based on the values of the transformation data
+dictionary.
 
-To get an idea about how this works, let's define a placeholder variable inside the
-`targets` directive of a topic section in the `mqttwarn.ini` configuration file:
+To get an idea about how this works, let's define a placeholder variable inside
+the `targets` directive of a topic section in the `mqttwarn.ini` configuration
+file:
 
-    [topic-targets-dynamic]
-    topic   = test/topic-targets-dynamic
-    format  = Something {loglevel} happened! {message}
-    targets = log:{loglevel}
+```
+[topic-targets-dynamic]
+topic   = test/topic-targets-dynamic
+format  = Something {loglevel} happened! {message}
+targets = log:{loglevel}
+```
 
 When sending this value through a JSON encoded message or by computing it
 through the `datamap` or `alldata` transformation machinery, it will get
 interpolated into the designated topic target. Example:
 
-    mosquitto_pub -t test/topic-targets-dynamic -m '{"loglevel": "crit", "message": "Nur Döner macht schöner!"}'
+```
+mosquitto_pub -t test/topic-targets-dynamic \
+    -m '{"loglevel": "crit", "message": "Nur Döner macht schöner!"}'
+```
 
 This will issue the following message into the log file:
 
-    2016-02-14 18:09:34,822 CRITICAL [log] Something crit happened! Nur Döner macht schöner!
+```
+2016-02-14 18:09:34,822 CRITICAL [log] Something crit happened! Nur Döner macht schöner!
+```
 
-While this little example might feel artificial, there are more meaningful
-use cases like determining the recipient address of `smtp` or `xmpp` receivers
-through information from topic names or message payloads.
-Please have a look at [Incorporate topic names into topic targets](https://github.com/jpmens/mqttwarn/wiki/Incorporating-topic-names#incorporate-topic-names-into-topic-targets)
+While this little example might feel artificial, there are more meaningful use
+cases like determining the recipient address of `smtp` or `xmpp` receivers
+through information from topic names or message payloads. Please have a look at
+[Incorporate topic names into topic
+targets](https://github.com/jpmens/mqttwarn/wiki/Incorporating-topic-names#incorporate-topic-names-into-topic-targets)
 for a more sensible example.
 
 
@@ -2776,31 +2876,41 @@ for a more sensible example.
 
 A notification can be filtered (or suppressed) using a custom function.
 
-An optional `filter` in our configuration file, defines the name of a function we provide. The function is provided in another file, as specified by the functions directive in the configuration file.
+An optional `filter` in our configuration file, defines the name of a function
+we provide.
 
 ```ini
-filter = owntracks_filter()
+[owntracks/+/+]
+filter = owntracks_helpers:owntracks_filter()
 ```
 
-This specifies that when a message for the defined topic `owntracks/jane/phone` is processed, our function `owntracks_filter()` should be invoked to parse that. The filter function should return `True` if the message should be suppressed, or `False` if the message should be processed. (As usual, topic names may contain MQTT wildcards.)
+This specifies that when a message with topic matching the topic handlers
+topic subscription (e.g. `owntracks/jane/phone`) is processed, the function
+`owntracks_filter()` should be invoked to filter the message. The filter
+function should return `True` if the message should be suppressed, or `False`
+if the message should be processed. The function receives the topic as a string
+and the raw payload as `bytes` (to save decoding teh payload of messages that
+might be filtered out anyway).
 
 The function we define to do that is:
 
 ```python
-def owntracks_filter(topic, message):
-    return message.find('event') == -1
+def owntracks_filter(topic, payload):
+    return b'event' is in payload
 ```
 
-This filter will suppress any messages that do not contain the `event` token.  This filter goes in the file specified by the functions directive.
+This filter will suppress any messages that do not contain the `event` token.
+
 
 ### Templates ###
 
-Instead of formatting output with the `format` specification as described above,
-_mqttwarn_ has provision for rendering the output message from [Jinja2] templates,
-probably particularly interesting for the `smtp` or `nntp` and `file` targets.
+Instead of formatting output with the `format` specification as described
+above, _mqttwarn_ has provision for rendering the output message from [Jinja2]
+templates, probably particularly interesting for the `smtp` or `nntp` and
+`file` targets.
 
-Consider the following example topic configuration, where we illustrate using
-a template instead of `format` (which is commented out).
+Consider the following example topic configuration, where we illustrate using a
+template instead of `format` (which is commented out).
 
 ```ini
 [nn/+]
@@ -2809,14 +2919,13 @@ targets = nntp:jpaa
 template = demo.j2
 ```
 
-_mqttwarn_ loads Jinja2 templates from the `templates/` directory relative to the
-configured `directory`. Assuming we have the following content in the file
-`templates/demo.j2`
+_mqttwarn_ loads Jinja2 templates from the `templates/` directory relative to
+the configured `directory`. Assuming we have the following content in the file
+`templates/demo.j2`:
 
 ```jinja2
 {#
-    this is a comment
-    in Jinja2
+    this is a comment in Jinja2
     See http://jinja.pocoo.org/docs/templates/ for information
     on Jinja2 templates.
 #}
@@ -2830,7 +2939,8 @@ Timestamp............: {{ _dthhmm }}
 Original payload.....: {{ payload }}
 ```
 
-could produce the following message, on any target which uses this configuration.
+This could produce the following message, on any target which uses this
+configuration.
 
 ```
 ------------------------------------------------------------
@@ -2840,33 +2950,39 @@ Timestamp............: 19:15
 Original payload.....: {"name":"Jane Jolie","number":47, "id":91}
 ```
 
-One of the template variables you may be interested in is called `{{ payload }}`; this
-carries the original MQTT message in it. Also, if the payload was JSON, those are
-available also (as shown in the above example), together with all the other
-transformation data.
+One of the template variables you may be interested in is called `{{ payload
+}}`; this contains the original MQTT message (decoded as a string). Also, if
+the payload was JSON, those are available also (as shown in the above example),
+together with all the other transformation data.
 
-If the template cannot be rendered, say, it contains a Jinja2 error or the template
-file cannot be found, etc., the original raw message is used in lieu on output.
+If the template cannot be rendered, say, it contains a Jinja2 error or the
+template file cannot be found, etc., the original raw message is used in lieu
+on output.
 
-As mentioned already, we think this is useful for targets which expect a certain
-amount of text (`file`, `smtp`, and `nntp` come to mind).
+As mentioned already, we think this is useful for targets which expect a
+certain amount of text (`file`, `smtp`, and `nntp` come to mind).
 
-Use of this feature requires [Jinja2], but you don't have to install it if you don't need
-templating.
+Use of this feature requires [Jinja2], but you don't have to install it if you
+don't need templating.
+
 
 ### Periodic tasks ###
 
-_mqttwarn_ can use functions you define in the file specified `[defaults]` section
-to periodically do whatever you want, for example, publish an MQTT message. There
-are two things you have to do:
+_mqttwarn_ can run be configured to run custom functions periodically do
+whatever you want, for example, publish an MQTT message. There are two things
+you have to do:
 
-1. Create the function
-2. Configure _mqttwarn_ to use that function and specify the interval in seconds
+1. Create the function in an importable module (for example in a Python
+   module file in the same directory as the configuartion file).
+2. Add a `[cron:<name>]` section to the _mqttwarn_ configuration  (replace
+   `<name>` with an arbitray name of your task), which specifies what function
+   to run and at what interval (in seconds).
 
-Assume we have the following custom function defined:
+Assume we have the following custom function defined in a file called
+`periodic_tasks.py` in the same direcory as the configuration file:
 
 ```python
-def pinger(srv=None):
+def pinger(srv):
     srv.mqttc.publish("pt/PINGER", "Hello from mqttwarn!", qos=0)
 ```
 
@@ -2874,57 +2990,78 @@ We configure this function to run every, say, 10 seconds, in the `mqttwarn.ini`,
 in the `[cron]` section:
 
 ```ini
-[cron]
-pinger = 10.5
+[cron:pinger]
+target: periodic_tasks:pinger()
+interval = 10.0
+
 ```
 
-Each keyword in the `[cron]` section specifies the name of one of your custom
-functions, and its float value is an interval in _seconds_ after which your
-custom function (_pinger()_ in this case) is invoked. Your function has access
-to the `srv` object (which was described earlier).
+Yo can add as many `[cron:xxx]` sections as you like, each specifiying a
+different function and/or interval. The task functions are passed `srv` object
+(which was described earlier).
 
-Function names are to be specified in lower-case characters.
+Function names (and dotted-path module names must adhere to Python identifier
+rules and may use ASCII lowercase and upper case letters, numerals and
+underscores only and must start with a letter or an underscore. The empty
+parentheses at the end are optional.
 
 If you want to run the custom function immediately after starting mqttwarn
-instead of waiting for the interval to elapse, you might want to configure:
+instead of waiting for the interval to elapse, you can add the `now` option
+set to `True` to a cron section:
+
 
 ```ini
-[cron]
-pinger = 10.5; now=true
+[cron:pinger]
+target: periodic_tasks:pinger()
+interval = 10.0
+now = true
 ```
-
 
 
 ## Examples ##
 
-This section contains some examples of how `mqttwarn` can be used with some more complex configurations.
+This section contains some examples of how `mqttwarn` can be used with some
+more complex configurations.
+
 
 ### Low battery notifications ###
 
-By subscribing to your [OwnTracks] topic and adding the following custom filter you can get `mqttwarn` to send notifications when your phone battery gets below a certain level;
+By subscribing to your [OwnTracks] topic and adding the following custom filter
+you can get `mqttwarn` to send notifications when your phone battery gets below
+a certain level;
 
 ```python
+# owntracks_helpers.py
+
 def owntracks_battfilter(topic, message):
-    data = dict(json.loads(message).items())
-    if data['batt'] is not None:
-        return int(data['batt']) > 20
+    batt = json.loads(payload).get('batt')
+
+    if batt is not None:
+        try:
+            # Suppress message if 'batt' value is greater than 20
+            return int(batt) > 20
+        except ValueError:
+            return True
+
+    # Suppress message because no 'batt' key in data
     return True
 ```
 
-Now simply add your choice of target(s) to the topic's section and a nice format string and you are done;
+Now simply add your choice of target(s) to the topic's section and a nice
+format string and you are done;
 
 ```ini
 [owntracks/#]
 targets = pushover, xbmc
-filter = owntracks_battfilter()
+filter = owntracks_helpers:owntracks_battfilter()
 format = My phone battery is getting low ({batt}%)!
 ```
 
 ### Producing JSON
 
-Assuming we get, from an Arduino, say, a single numerical value in the payload of an MQTT
-message, we want to generate JSON with some additional fields. Using a Jinja2 template
-for the task, does exactly what we need:
+Assuming we get, from an Arduino, say, a single numerical value in the payload
+of an MQTT message, we want to generate JSON with some additional fields. Using
+a Jinja2 template for the task, does exactly what we need:
 
 The following target configuration invokes the template:
 
@@ -2938,7 +3075,7 @@ The Jinja2 template looks like this:
 
 ```jinja2
 {#
-    We expect a single numeric temperature value in `payload'
+    We expect a single numeric temperature value in 'payload'
     Return JSON suitable for Graylog2 (requires host and short_message)
 
     Define a data structure in Jinja2 and return it as a JSON string.
@@ -2947,23 +3084,22 @@ The Jinja2 template looks like this:
     payload respectively.
 #}
 {% set data = {
-	'host'		: topic,
-	'short_message'	: "Heat " + payload,
-	'tst'		: _dtiso,
-	'temperature'	: payload,
-	'woohooo'	: 17,
-	}
-	%}
+    'host': topic,
+    'short_message': "Heat " + payload,
+    'tst': _dtiso,
+    'temperature': payload,
+    'woohooo': 17,
+    }
+%}
 {{ data | jsonify }}
 ```
 
-and an example JSON string returned by that template is then passed to our configured
-targets thusly:
+The example JSON string returned by that template is then passed to the
+configured targets:
 
 ```json
-"host": "arduino/temp", "woohooo": 17, "tst": "2014-04-13T09:25:46.247150Z", "temperature": "22", "short_message": "Heat 22"}
+{"host": "arduino/temp", "woohooo": 17, "tst": "2014-04-13T09:25:46.247150Z", "temperature": "22", "short_message": "Heat 22"}
 ```
-
 
 
 ## Requirements
@@ -2976,7 +3112,8 @@ You'll need at least the following components:
 
 ## Notes
 
-"MQTT" is a trademark of the OASIS open standards consortium, which publishes the MQTT specifications.
+"MQTT" is a trademark of the OASIS open standards consortium, which publishes
+the MQTT specifications.
 
 
 ## Installation
@@ -2986,10 +3123,13 @@ You'll need at least the following components:
 3. Install the prerequisite Python modules for the services you want to use
 4. Launch `mqttwarn.py`
 
-I recommend you use [Supervisor](http://jpmens.net/2014/02/13/in-my-toolbox-supervisord/) for running this.
+I recommend you use
+[Supervisor](http://jpmens.net/2014/02/13/in-my-toolbox-supervisord/) for
+running this.
 
-Alternatively, a systemd-based installation using a Python virtualenv might be handy,
-see [systemd unit configuration file for mqttwarn](https://github.com/jpmens/mqttwarn/blob/master/etc/mqttwarn.service)
+Alternatively, a systemd-based installation using a Python virtualenv might be
+handy, see [systemd unit configuration file for
+mqttwarn](https://github.com/jpmens/mqttwarn/blob/master/etc/mqttwarn.service)
 for step-by-step instructions about doing this.
 
 
