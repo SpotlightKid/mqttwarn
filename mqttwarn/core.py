@@ -242,7 +242,7 @@ class MQTTMessageWrapper(object):
 
     def data(self, encoding='utf-8'):
         """Return a dict with standard transformation data available to all plugins."""
-        if not hasattr(self, 'm_data'):
+        if not hasattr(self, '_data'):
             dt = datetime.utcnow()
             lt = datetime.now()
             self._data = {
