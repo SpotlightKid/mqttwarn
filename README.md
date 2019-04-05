@@ -214,12 +214,12 @@ tls = False
 ca_certs = None
 certfile = None
 keyfile = None
-tls_version = None
+tls_version = tlsv1_2
 tls_insecure = False
 
 ; ca_certs: path to the Certificate Authority certificate file (concatenated
 ;           PEM file)
-; tls_version: currently either 'tlsv1' or 'sslv3'
+; tls_version: currently either 'tlsv1', tlsv1_1, or tlsv1_2 (default)
 ; tls_insecure: True or False (False is default): Do or do not verify
 ;               broker's certificate CN
 ; certfile: path to PEM encode client certificate file

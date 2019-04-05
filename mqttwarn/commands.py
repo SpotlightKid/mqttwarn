@@ -118,15 +118,13 @@ def load_configuration(configfile=None, name=None):
 
 
 def setup_logging(config):
-    LOGLEVEL = config.loglevelnumber
-    LOGFILE = config.logfile
-    LOGFORMAT = config.logformat
+    level = getattr(logging, config.loglevel, 'INFO')
 
     # Send log messages to sys.stderr by configuring "logfile = stream://sys.stderr"
-    if LOGFILE.startswith('stream://'):
-        LOGFILE = LOGFILE.replace('stream://', '')
-        logging.basicConfig(stream=eval(LOGFILE), level=LOGLEVEL, format=LOGFORMAT)
+    if config.logfile.startswith('stream://sys.'):
+        stream = getattr(sys, config.logfile.replace('stream://sys.', ''))
+        logging.basicConfig(stream=stream, level=level, format=config.logformat)
 
     # Send log messages to file by configuring "logfile = 'mqttwarn.log'"
     else:
-        logging.basicConfig(filename=LOGFILE, level=LOGLEVEL, format=LOGFORMAT)
+        logging.basicConfig(filename=config.logfile, level=level, format=config.logformat)

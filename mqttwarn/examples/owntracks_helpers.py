@@ -43,7 +43,7 @@ handler section targetting this service to your ``mqttwarn.ini`` file::
     topic = owntracks/+/+
     targets = log:info, postgres:owntracks
     filter = owntracks_helpers:owntracks_filter()
-    datamap = owntracks_helpers:owntracks_dataconvert()
+    datamap = owntracks_helpers:owntracks_datamap()
     format = {username} {device} {tst} at location {lat},{lon}
 
 The function for the ``filter`` option makes sure that only messages of type

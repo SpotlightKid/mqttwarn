@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # (c) 2014-2019 The mqttwarn developers
 
-import sys
 import ast
 import logging
 
@@ -16,7 +15,12 @@ except ImportError:
 HAVE_TLS = True
 try:
     import ssl
-except ImportError:
+    TLS_VERSIONS = {
+        'tlsv1_2': ssl.PROTOCOL_TLSv1_2,
+        'tlsv1_1': ssl.PROTOCOL_TLSv1_1,
+        'tlsv1': ssl.PROTOCOL_TLSv1
+    }
+except (AttributeError, ImportError):
     HAVE_TLS = False
 
 
@@ -30,17 +34,6 @@ class Config(RawConfigParser):
         'TRUE': True,
         'FALSE': False,
         'NONE': None,
-    }
-
-    loglevels = {
-        'CRITICAL': 50,
-        'DEBUG': 10,
-        'ERROR': 40,
-        'FATAL': 50,
-        'INFO': 20,
-        'NOTSET': 0,
-        'WARN': 30,
-        'WARNING': 30,
     }
 
     def __init__(self, configuration_file, defaults=None):
@@ -70,7 +63,7 @@ class Config(RawConfigParser):
 
         self.directory = '.'
         self.ca_certs = None
-        self.tls_version = None
+        self.tls_version = 'tlsv1_2'
         self.certfile = None
         self.keyfile = None
         self.tls_insecure = False
@@ -79,27 +72,11 @@ class Config(RawConfigParser):
         self.__dict__.update(defaults)
         self.__dict__.update(self.config('defaults'))
 
-        if not HAVE_TLS:
-            log.error("TLS (SSL) parameters set but no ssl module TLS.")
-            sys.exit(2)
+        if self.tls and not HAVE_TLS:
+            raise ValueError(
+                "TLS (SSL) parameters set but the 'ssl' module is not available or outdated.")
 
-        if self.ca_certs is not None:
-            self.tls = True
-
-        if self.tls_version is not None:
-            if self.tls_version == 'tlsv1_2':
-                self.tls_version = ssl.PROTOCOL_TLSv1_2
-            if self.tls_version == 'tlsv1_1':
-                self.tls_version = ssl.PROTOCOL_TLSv1_1
-            if self.tls_version == 'tlsv1':
-                self.tls_version = ssl.PROTOCOL_TLSv1
-            if self.tls_version == 'sslv3':
-                self.tls_version = ssl.PROTOCOL_SSLv3
-
-        self.loglevelnumber = self.level2number(self.loglevel)
-
-    def level2number(self, level):
-        return self.loglevels.get(level.upper(), self.loglevels['DEBUG'])
+        self.tls_version = TLS_VERSIONS.get(self.tls_version)
 
     def g(self, section, key, fallback=_UNSET):
         try:
