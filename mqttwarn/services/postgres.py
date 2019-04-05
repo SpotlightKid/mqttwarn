@@ -266,6 +266,7 @@ class Plugin:
         except psycopg2.Error as exc:
             self.log.error("Could not connect to postgres data '%s' at '%s:%s': %s",
                            self.database, self.host, self.port, exc)
+            return False
 
         if unknown_keys:
             if fallback_col in unknown_keys:
