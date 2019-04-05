@@ -150,11 +150,11 @@ class TopicHandler(object):
             if isinstance(payload_data, dict):
                 data.update(payload_data)
 
-        # If the topic handler section has a ``datamap`` option, which is set to
-        # an importable modulepath/function, it is called with the message topic
-        # and the global transformation_data as positional arguments.
+        # If the topic handler section has a ``datamap`` option, which is set
+        # to an importable modulepath/function, it is called with the message
+        # topic and the global transformation data as positional arguments.
         # The function may update the transformation data dictionary.
-        # It's return value is ignored.
+        # The return value is ignored.
         self.xform('datamap', msg.topic, data)
 
         return data
