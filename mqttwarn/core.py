@@ -665,14 +665,16 @@ def connect():
     services = cf.getlist('defaults', 'launch', fallback=[])
 
     if not services:
-        log.error("No services configured. Aborting.")
-        sys.exit(2)
+        msg = "No services configured. Aborting."
+        log.error(msg)
+        sys.exit(msg)
 
     try:
         os.chdir(cf.directory)
     except Exception as exc:
-        log.error("Cannot chdir to %s: %s", cf.directory, exc)
-        sys.exit(2)
+        msg = "Cannot chdir to %s: %s" % (cf.directory, exc)
+        log.error(msg)
+        sys.exit(msg)
 
     # Initialize MQTT broker connection
     mqttc = paho.Client(cf.client_id, clean_session=cf.clean_session, protocol=cf.protocol,
@@ -709,8 +711,9 @@ def connect():
         log.debug("Attempting connection to MQTT broker %s:%s...", cf.hostname, cf.port)
         mqttc.connect(cf.hostname, int(cf.port), 60)
     except Exception as exc:
-        log.exception("Cannot connect to MQTT broker at %s:%s: %s", cf.hostname, cf.port, exc)
-        sys.exit(2)
+        msg = "Cannot connect to MQTT broker at %s:%s: %s" % (cf.hostname, cf.port, exc)
+        log.exception(msg)
+        sys.exit(msg)
 
     # Launch worker threads to operate on queue
     log.info('Starting %s worker threads...', cf.num_workers)
