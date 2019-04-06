@@ -113,7 +113,7 @@ Create the following configuration file and save it as `mqttwarn.ini`:
 
 ```ini
 [defaults]
-hostname = 'localhost'
+hostname = localhost
 port = 1883
 
 ; name the service providers you will be using.
@@ -180,22 +180,22 @@ ought to be self-explanatory. The values shown here are the default settings.
 
 ```ini
 [defaults]
-hostname = 'localhost'
+hostname = localhost
 port = 1883
-transport = 'tcp'
+transport = tcp
 ; MQTTv31 = 3, MQTTv311 = 4 (default)
 protocol = 4
 username = None
 password = None
-client_id = 'mqttwarn'
+client_id = mqttwarn
 ; lwt payload is '0' or '1'
-lwt = 'clients/mqttwarn'
+lwt = clients/mqttwarn
 skipretained = False
 clean_session = False
 
 ; logging
-logformat = '%(asctime)-15s %(levelname)-8s [%(name)-25s] %(message)s'
-logfile = 'mqttwarn.log'
+logformat = %(asctime)-15s %(levelname)-8s [%(name)-25s] %(message)s
+logfile = mqttwarn.log
 
 ; one of: CRITICAL, DEBUG, ERROR, INFO, WARN
 loglevel = DEBUG
@@ -230,10 +230,10 @@ tls_insecure = False
 ; Don't forget to set the port number for TLS (commonly 8883).
 ;
 ; Example settings:
-;ca_certs = '/path/to/ca-certs.pem'
-;certfile = '/path/to/client.crt'
-;keyfile = '/path/to/client.key'
-;tls_version = 'tlsv1'
+;ca_certs = /path/to/ca-certs.pem
+;certfile = /path/to/client.crt
+;keyfile = /path/to/client.key
+;tls_version = tlsv1
 
 ```
 
@@ -265,7 +265,7 @@ but due to the `module=log` setting in its configuration it is instantiated:
 
 ```ini
 [defaults]
-hostname = 'localhost'  ; default
+hostname = localhost  ; default
 port = 1883
 
 launch = log, xxxlog
@@ -303,8 +303,8 @@ display them on all XBMC targets:
 
 ```ini
 [failover]
-targets  = log:error, xbmc
-title    = mqttwarn
+targets = log:error, xbmc
+title = mqttwarn
 ```
 
 ## The `[__topic__]` sections
@@ -404,7 +404,7 @@ specifies that messages published to `osx/json` should be transformed as on the
 right-hand side.
 
 ```ini
-format = "I'll have a {fruit} if it costs {price}"
+format = I'll have a {fruit} if it costs {price}
 ```
 
 (Embedded `"\n"` are converted to newlines on output.)
@@ -447,28 +447,31 @@ outgoing `mqtt` publishes), hostname/port number combinations for `xbmc`, etc.
 
 ### `amqp`
 
-The `amqp` service basically implements an MQTT to AMQP gateway which is a little bit overkill as,
-say, RabbitMQ already has a pretty versatile MQTT plugin. Be that as it may, the configuration is
-as follows:
+The `amqp` service basically implements an MQTT to AMQP gateway which is a
+little bit overkill as, say, RabbitMQ already has a pretty versatile MQTT
+plugin. Be that as it may, the configuration is as follows:
 
 ```ini
 [config:amqp]
-uri = 'amqp://user:password@localhost:5672/'
+uri = amqp://user:password@localhost:5672/
 targets = {
         'test01': ['name_of_exchange', 'routing_key'],
     }
 ```
 
-The exchange specified in the target configuration must exist prior to using this target.
+The exchange specified in the target configuration must exist prior to using
+this target.
 
-Requires: [Puka](https://github.com/majek/puka/) (`pip install puka`)
+Requires:
+
+* [Puka](https://github.com/majek/puka/) (`pip install puka`)
 
 
 ### `apns`
 
-The `apns` service interacts with the Apple Push Notification Service (APNS) and
-is a bit special (and one of _mqttwarn_'s more complex services) in as much as
-it requires an X.509 certificate and a key which are typically available to
+The `apns` service interacts with the Apple Push Notification Service (APNS)
+and is a bit special (and one of _mqttwarn_'s more complex services) in as much
+as it requires an X.509 certificate and a key which are typically available to
 developers only.
 
 The following discussion assumes one of these payloads published via MQTT:
@@ -481,10 +484,10 @@ The following discussion assumes one of these payloads published via MQTT:
 {"alert": "Vehicle moved", "custom" : { "tid": "C2" }}
 ```
 
-In both cases, the message which will be displayed in the notification of the iOS
-device is "Vehicle moved". The second example depends on the app which receives
-the notification. This custom data is per/app. This example app uses the custom
-data to show a button:
+In both cases, the message which will be displayed in the notification of the
+iOS device is "Vehicle moved". The second example depends on the app which
+receives the notification. This custom data is per/app. This example app uses
+the custom data to show a button:
 
 ![APNS notification](assets/apns.png)
 
@@ -492,16 +495,15 @@ This is the configuration we'll discuss.
 
 ```ini
 [defaults]
-hostname  = 'localhost'
-port      = 1883
-functions = 'myfuncs'
+hostname = localhost
+port = 1883
 
-launch	 = apns
+launch = apns
 
 [config:apns]
 targets = {
-                 # path to cert in PEM format   # key in PEM format
-    'prod'     : ['/path/to/prod.crt',          '/path/to/prod.key'],
+         #       path to cert in PEM format, path to key in PEM format
+        'prod': ['/path/to/prod.crt', '/path/to/prod.key'],
     }
 
 [test/token/+]
@@ -511,14 +513,16 @@ format  = {alert}
 ```
 
 Certificate and Key files are in PEM format, and the key file must *not* be
-password-protected. (The PKCS#12 file you get as a developer can be extracted thusly:
+password-protected. (The PKCS#12 file you get as a developer can be extracted
+thusly:
 
 ```
 openssl pkcs12 -in apns-CTRL.p12 -nocerts -nodes | openssl rsa > prod.key
 openssl pkcs12 -in apns-CTRL.p12 -clcerts -nokeys  > xxxx
 ```
 
-then copy/paste from `xxxx` the sandbox or production certificate into `prod.crt`.)
+then copy/paste from `xxxx` the sandbox or production certificate into
+`prod.crt`.)
 
 The _myfuncs_ function `apnsdata()` extracts the last part of the topic into
 `apns_token`, the hex token for the target device, which is required within the
@@ -529,31 +533,37 @@ def apnsdata(topic, data, srv=None):
     return dict(apns_token = topic.split('/')[-1])
 ```
 
-A publish to topic `test/token/380757b117f15a46dff2bd0be1d57929c34124dacb28d346dedb14d3464325e5`
+A publish to topic
+`test/token/380757b117f15a46dff2bd0be1d57929c34124dacb28d346dedb14d3464325e5`
 would thus emit the APNS notification to the specified device.
 
 
-Requires [PyAPNs](https://github.com/djacobs/PyAPNs)
+Requires:
+
+* [PyAPNs](https://github.com/djacobs/PyAPNs)
+
 
 ### `autoremote`
 
-The `autoremote` service forwards messages from desired topics to autoremote clients.
-```ini
+The `autoremote` service forwards messages from desired topics to autoremote
+clients.
 
+```ini
 [config:autoremote]
 targets = {
-	'conv2' : [ 'ApiKey', 'Password', 'Target', 'Group', 'TTL' ]
-  }
+        'conv2': ['ApiKey', 'Password', 'Target', 'Group', 'TTL']
+    }
 
 [autoremote/user]
 targets = autoremote:conv2
 ```
 
 Any messages published to autoremote/user would be sent the autoremote client
-designated to the ApiKey provided. The "sender" variable of autoremote is equal to
-the topic address.
+designated to the ApiKey provided. The "sender" variable of autoremote is equal
+to the topic address.
 
 https://joaoapps.com/autoremote/
+
 
 ### `carbon`
 
@@ -562,8 +572,8 @@ The `carbon` service sends a metric to a Carbon-enabled server over TCP.
 ```ini
 [config:carbon]
 targets = {
-        'c1' : [ '172.16.153.110', 2003 ],
-  }
+        'c1': ['172.16.153.110', 2003],
+    }
 
 [c/#]
 targets = carbon:c1
@@ -592,9 +602,9 @@ parts.
 In other words, the following payloads are valid:
 
 ```
-15					just the value (metric name will be MQTT topic)
-room.living 15				metric name and value
-room.living 15 1405014635		metric name, value, and timestamp
+15                  just the value (metric name will be MQTT topic)
+room.living 15              metric name and value
+room.living 15 1405014635       metric name, value, and timestamp
 ```
 
 ### `celery`
@@ -603,24 +613,25 @@ The `celery` service sends messages to celery which celery workers can consume.
 
 ```ini
 [config:celery]
-broker_url = 'redis://localhost:6379/5'
-app_name = 'celery'
-celery_serializer = 'json'
+broker_url = redis://localhost:6379/5
+app_name = celery
+celery_serializer = json
 targets = {
-   'hello': [
-      {
-        'task': 'myapp.hello',
-        'message_format': 'json'
-        }
-      ],
-  }
+       'hello': [
+            {'task': 'myapp.hello', 'message_format': 'json'}
+        ],
+    }
 
 [hello/#]
 targets = celery:hello
 ```
-Broker URL can be any broker supported by celery. Celery serializer is usually json or pickle. Json is recommended for security.
-Targets are selected by task name. Message_format can be either "json" or "text". If it is json, the message will be sent as a json payload rather than a string.
-In this configuration, all messages that match hello/ will be sent to the celery task "myapp.hello". The first argument of the celery task will be the message from mqtt.
+
+Broker URL can be any broker supported by celery. Celery serializer is usually
+json or pickle. Json is recommended for security. Targets are selected by task
+name. Message_format can be either "json" or "text". If it is json, the message
+will be sent as a json payload rather than a string. In this configuration, all
+messages that match hello/ will be sent to the celery task "myapp.hello". The
+first argument of the celery task will be the message from mqtt.
 
 
 ### `dbus`
@@ -631,13 +642,15 @@ tested with Gnome3).
 ```ini
 [config:dbus]
 targets = {
-    'warn' : [ 'Warning' ],
-    'note' : [ 'Note' ]
+        'warn': ['Warning'],
+        'note': ['Note']
     }
 ```
 
 Requires:
+
 * Python [dbus](http://www.freedesktop.org/wiki/Software/DBusBindings/#Python) bindings
+
 
 ### `dnsupdate`
 
@@ -646,50 +659,53 @@ Consider the following configuration:
 
 ```ini
 [config:dnsupdate]
-dns_nameserver = '127.0.0.2'
-dns_keyname= 'mqttwarn-auth'
-dns_keyblob= 'kQNwTJ ... evi2DqP5UA=='
+dns_nameserver = 127.0.0.2
+dns_keyname = mqttwarn-auth
+dns_keyblob = kQNwTJ ... evi2DqP5UA==
 targets = {
-   #target             DNS-Zone      DNS domain              TTL,  type
-   'temp'         :  [ 'foo.aa.',     'temperature.foo.aa.', 300, 'TXT'   ],
-   'addr'         :  [ 'foo.aa.',     'www.foo.aa.',         60,  'A'   ],
-  }
+        #        DNS-Zone, DNS domain, TTL, type
+        'temp': ['foo.aa.', 'temperature.foo.aa.', 300, 'TXT'],
+        'addr': ['foo.aa.', 'www.foo.aa.', 60, 'A'],
+    }
 
 [test/temp]
 targets = log:info, dnsupdate:temp
-format = Current temperature: {payload}C
+format = Current temperature: {payload}° C
 
 [test/a]
 targets = log:info, dnsupdate:addr
 format = {payload}
 ```
 
-`dns_nameserver` is the address of the authoritative server the update should be sent
-to via a TCP update. `dns_keyname` and `dns_keyblob` are the TSIG key names and base64-representation of the key respectively. These can be created with either of:
+`dns_nameserver` is the address of the authoritative server the update should
+be sent to via a TCP update. `dns_keyname` and `dns_keyblob` are the TSIG key
+names and base64-representation of the key respectively. These can be created
+with either of:
 
 ```
 ldns-keygen  -a hmac-sha256 -b 256 keyname
 dnssec-keygen -n HOST -a HMAC-SHA256 -b 256 keyname
 ```
 
-where _keyname_ is the name then added to `dns_keyname` (in this example: `mqttwarn-auth`).
+where _keyname_ is the name then added to `dns_keyname` (in this example:
+`mqttwarn-auth`).
 
-Supposing a BIND DNS server configured to allow updates, you would then configure it
-as follows:
+Supposing a BIND DNS server configured to allow updates, you would then
+configure it as follows:
 
 ```
 key "mqttwarn-auth" {
-  algorithm hmac-sha256;
-  secret "kQNwTJ ... evi2DqP5UA==";
+    algorithm hmac-sha256;
+    secret "kQNwTJ ... evi2DqP5UA==";
 };
 
 ...
 zone "foo.aa" in {
-   type master;
-   file "keytest/foo.aa";
-   update-policy {
-      grant mqttwarn-auth. zonesub ANY;
-   };
+    type master;
+    file "keytest/foo.aa";
+    update-policy {
+        grant mqttwarn-auth. zonesub ANY;
+    };
 };
 ```
 
@@ -717,7 +733,9 @@ client 127.0.0.2#52786/key mqttwarn-auth: view internal: updating zone 'foo.aa/I
 ```
 
 Requires:
+
 * [dnspython](http://www.dnspython.org)
+
 
 ### `emoncms`
 
@@ -733,8 +751,8 @@ url     = <url of emoncms server e.g. http://localhost/emoncms or http://emoncms
 apikey  = <apikey generated by the emoncms server>
 timeout = 5
 targets = {
-    'usage'  : [ 1, 'usage' ],  # [ <nodeid>, <name> ]
-    'solar'  : [ 1, 'solar' ]
+    'usage': [1, 'usage'],  # [ <nodeid>, <name>]
+    'solar': [1, 'solar']
     }
 ```
 
@@ -749,7 +767,7 @@ and the execute an external program. It is also a light version of [mqtt-launche
 [config:execute]
 targets = {
              # argv0 .....
-   'touch' : [ 'touch', '/tmp/executed' ]
+   'touch': ['touch', '/tmp/executed']
    }
 ```
 
@@ -770,7 +788,7 @@ list are in the order specified!
 ```ini
 [config:fbchat]
 targets = {
-  'janejol'   :  [ 'vvvvvvvvvvvvvvvvvvvvvv',                              # username sending message
+  'janejol': ['vvvvvvvvvvvvvvvvvvvvvv',                              # username sending message
                    'wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww',          # username's password (sending message)
                    'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'  # destination account (receiving message)
                   ]
@@ -792,7 +810,7 @@ Supposing we wish to archive all incoming messages to the branch `arch/#` to a f
 append_newline = True
 overwrite = False
 targets = {
-    'log-me'    : ['/data/arch']
+    'log-me': ['/data/arch']
    }
 ```
 
@@ -809,14 +827,14 @@ You need to provide a TTS URL to perform the conversion of your message to an an
 
 ```ini
 [config:freeswitch]
-host      = 'localhost'
+host      = localhost
 port      = 8050
-username  = 'freeswitch'
-password  = '<xml_rpc_password>'
-ttsurl    = 'translate.google.com/translate_tts?'
-ttsparams = { 'tl': 'en', 'ie': 'UTF-8', 'client': 'mqttwarn', 'q': '{payload}' }
+username  = freeswitch
+password  = <xml_rpc_password>
+ttsurl    = translate.google.com/translate_tts?
+ttsparams = {'tl': 'en', 'ie': 'UTF-8', 'client': 'mqttwarn', 'q': '{payload}'}
 targets   = {
-    'mobile'    : ['sofia/gateway/domain/', '0123456789']
+    'mobile': ['sofia/gateway/domain/', '0123456789']
     }
 ```
 
@@ -832,14 +850,14 @@ The plugin author strongly recommends you use AMI only in trusted networks.
 
 ```ini
 [config:asterisk]
-host     = 'localhost'
+host     = localhost
 port     = 5038
-username = 'mqttwarn'
-password = '<AMI password>'
+username = mqttwarn
+password = <AMI password>
 extension = 2222
-context = 'default'
+context = default
 targets  = {
-    'user'    : ['SIP/avaya/', '0123456789']
+    'user': ['SIP/avaya/', '0123456789']
           }
 ```
 
@@ -863,7 +881,7 @@ username    = your.username@gmail.com
 password    = yourpassword
 targets     = {
                # spreadsheet_key                               # worksheet_id
-    'test': [ 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',  'od6']
+    'test': ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',  'od6']
     }
 ```
 
@@ -905,7 +923,7 @@ oauth2_code =
 oauth2_storage_filename = oauth2.store
 targets = {
     # spreadsheet_url                                          # worksheet_name
-    'test': [ 'https://docs.google.com/spre...cdA-ik8uk/edit', 'Sheet1']
+    'test': ['https://docs.google.com/spre...cdA-ik8uk/edit', 'Sheet1']
     # This target would be addressed as 'gss2:test'.
     }
 ```
@@ -979,8 +997,8 @@ https://github.com/hangoutsbot/hangoutsbot/wiki/API-Plugin
 ```ini
 [config:hangbot]
 targets = {
-		 #URL		 #PORT	 #ApiKey	#Conversation ID
-   'conv1'   : ['ServerAddress', 'Port', 'xxxxxxxxxxx', 'xxxxxxxxxxxxxxxxxxxx']
+         #URL        #PORT   #ApiKey    #Conversation ID
+   'conv1': ['ServerAddress', 'Port', 'xxxxxxxxxxx', 'xxxxxxxxxxxxxxxxxxxx']
   }
 ```
 
@@ -997,8 +1015,8 @@ timeout = 10 # Default 60 seconds
 
 targets = {
                      #token         #roomid  #color #notify
-  'room-ops'    : [ "yyyyyyyyyyyyy", "000", "red", True ],
-  'room-dev'    : [ "xxxxxxxxxxxxx", "111", "green", False ]
+  'room-ops': ["yyyyyyyyyyyyy", "000", "red", True],
+  'room-dev': ["xxxxxxxxxxxxx", "111", "green", False]
   }
 ```
 
@@ -1026,8 +1044,8 @@ timeout = 60
 
 targets = {
                 #method     #URL               # query params or None                              # list auth # Json
-  'get1'    : [ "get",  "http://example.org?", { 'q': '{name}', 'isod' : '{_dtiso}', 'xx': 'yy' }, ('username', 'password') ],
-  'post1'    : [ "post", "http://example.net", { 'q': '{name}', 'isod' : '{_dtiso}', 'xx': 'yy' }, None, True ]
+  'get1': ["get",  "http://example.org?", { 'q': '{name}', 'isod' : '{_dtiso}', 'xx': 'yy' }, ('username', 'password')],
+  'post1': ["post", "http://example.net", { 'q': '{name}', 'isod' : '{_dtiso}', 'xx': 'yy' }, None, True]
   }
 ```
 
@@ -1083,15 +1101,15 @@ This allows you to manipulate the status, output and service name by parsing top
 
 ```ini
 [config:icinga2]
-host     = 'https://icingahost'
+host     = https://icingahost
 port     = 5665
-username = 'api-username'
-password = 'api-password'
-cacert   = '<path-to-ca-cert>'
+username = <api-username>
+password = <api-password>
+cacert   = <path-to-ca-cert>
 targets  = {
                         # host-name   service-name  check-source
-    'host-check '    : [ 'host.com',  None,         'mqttwarn' ],
-    'service-check ' : [ 'host.com',  'passive',    'mqttwarn' ],
+    'host-check ': ['host.com',  None,         'mqttwarn'],
+    'service-check ': ['host.com',  'passive',    'mqttwarn'],
     }
 ```
 
@@ -1104,7 +1122,7 @@ this service is for [ifttt maker applet](https://ifttt.com/maker_webhooks) to se
 ```ini
 [config:ifttt]
 targets = {
-    'warnme'   : [ '<api key>', '<event webhook>' ]
+    'warnme': ['<api key>', '<event webhook>']
   }
 ```
 
@@ -1120,7 +1138,7 @@ Using this service, *plain texts* can be sent to one or many ionic apps. And eac
 ```ini
 [config:ionic]
 targets = {
-  'anyappalias' : [ '<ionic app id>', '<ionic app secret>', '<device token 1>', '<device token 2>', '<device token N>']
+  'anyappalias': ['<ionic app id>', '<ionic app secret>', '<device token 1>', '<device token 2>', '<device token N>']
   }
 ```
 
@@ -1134,14 +1152,14 @@ Each target defines which device to impersonate when sending the message.
 
 ```ini
 [config:iothub]
-hostname = '<name>.azure-devices.net'
-# protocol = 'AMQP'/'MQTT'/'HTTP' # Optional, default is AMQP
-# message_timeout = 10000 # Optional, default is not to expire
-# timeout = 10 # Optional, for HTTP transport only
-# minimum_polling_time = 9 # Optional, for HTTP transport only
+hostname = <name>.azure-devices.net
+# protocol = AMQP'/'MQTT'/'HTTP     ; Optional, default is AMQP
+# message_timeout = 10000           ; Optional, default is not to expire
+# timeout = 10                      ; Optional, for HTTP transport only
+# minimum_polling_time = 9          ; Optional, for HTTP transport only
 targets = {
                # device id   # device key
-    'test' : [ 'pi',         'uN...6w=' ]
+    'test': ['pi',         'uN...6w=']
   }
 ```
 
@@ -1170,15 +1188,15 @@ Following is an ini example, showing the various connection properties for the I
 
 ```ini
 [config:influxdb]
-host      = 'influxdbhost'
+host = influxdbhost
 port      = 8086
-username  = 'username'
-password  = 'password'
-database  = 'mqttwarn'
+username = <username>
+password = <password>
+database = mqttwarn
 targets = {
                           # measurement
-    'humidity'         : [ 'humidity' ],
-    'temperature'      : [ 'temperature' ]
+    'humidity': ['humidity'],
+    'temperature': ['temperature']
     }
 ```
 
@@ -1207,11 +1225,11 @@ To always send the same `object` and `action` tracker values, set them as consta
 
 ```ini
 [config:instapush]
-appid = '12345abc123456'
-appsecret = '1234567890abcd123456789abcdef123456789'
+appid = 12345abc123456
+appsecret = 1234567890abcd123456789abcdef123456789
 targets = {
              # event   # trackers
-  'notify' : [ 'alerts', {"object":"door", "action":"opened/closed"}]
+  'notify': ['alerts', {"object":"door", "action":"opened/closed"}]
   }
 ```
 
@@ -1229,7 +1247,7 @@ Each target has to be configured with the address, TCP port and channel name of 
 [config:irccat]
 targets = {
              # address     port   channel
-   'chan1': [ '127.0.0.1', 12345, '#testchan1' ],
+   'chan1': ['127.0.0.1', 12345, '#testchan1'],
   }
 ```
 
@@ -1248,7 +1266,7 @@ environment (only tested with Gnome3).
 ```ini
 [config:linuxnotify]
 targets = {
-    'warn' : [ 'Warning' ]
+    'warn': ['Warning']
     }
 ```
 
@@ -1265,10 +1283,10 @@ proper, i.e. messages directed at `log` will land in _mqttwarn_'s log file.
 ```ini
 [config:log]
 targets = {
-    'info'   : [ 'info' ],
-    'warn'   : [ 'warn' ],
-    'crit'   : [ 'crit' ],
-    'error'  : [ 'error' ]
+    'info': ['info'],
+    'warn': ['warn'],
+    'crit': ['crit'],
+    'error': ['error']
   }
 ```
 
@@ -1286,15 +1304,15 @@ Consider the following configuration:
 ```ini
 [config:mattermost]
 targets = {
-                 # hook_url, 	channel, 	username, 	icon_url
-    'jpt'	: [ 'http://localhost:8065/hooks/s9x9x8xywjgw9x9x8xyqiujcyo',
-    			'town-square',
-			'mqttwarn-jpt',
-			'http://192.168.1.130/~jpm/ninja.png' ],
-    'vehicles'	: [ 'http://127.0.0.1:8065/hooks/a87x8we4wjgwfxmuh7j9x9x8xy',
-    			'town-square',
-			'owntracks',
-			'http://example.org/owntracks.png' ],
+                 # hook_url,    channel,    username,   icon_url
+    'jpt': ['http://localhost:8065/hooks/s9x9x8xywjgw9x9x8xyqiujcyo',
+                'town-square',
+            'mqttwarn-jpt',
+            'http://192.168.1.130/~jpm/ninja.png'],
+    'vehicles': ['http://127.0.0.1:8065/hooks/a87x8we4wjgwfxmuh7j9x9x8xy',
+                'town-square',
+            'owntracks',
+            'http://example.org/owntracks.png'],
   }
 
 [osx/json]
@@ -1321,16 +1339,16 @@ Consider the following configuration snippets:
 
 ```ini
 [config:mqtt]
-hostname =  'localhost'
+hostname = localhost
 port =  1883
 qos =  0
 retain =  False
-username =  "jane"
-password =  "secret"
+username = jane
+password = secret
 targets = {
-  'o1'    : [ 'out/food' ],
-  'o2'    : [ 'out/fruit/{fruit}' ],
-  'm2'	  : [ 'sometopic', 'specialmq.ini' ],
+  'o1': ['out/food'],
+  'o2': ['out/fruit/{fruit}'],
+  'm2': ['sometopic', 'specialmq.ini'],
   }
 
 [in/a1]
@@ -1406,8 +1424,8 @@ Each target requires a topic name, the desired _qos_ and a _retain_ flag.
 [config:mqttpub]
 targets = {
                 # topic            qos     retain
-    'mout1'   : [ 'mout/1',         0,     False ],
-    'special' : [ 'some/{device}',  0,     False ],
+    'mout1': ['mout/1',         0,     False],
+    'special': ['some/{device}',  0,     False],
   }
 ```
 
@@ -1421,14 +1439,14 @@ The MySQL plugin is one of the most complicated to set up. It requires the follo
 
 ```ini
 [config:mysql]
-host  =  'localhost'
-port  =  3306
-user  =  'jane'
-pass  =  'secret'
-dbname  =  'test'
+host = localhost
+port = 3306
+user = jane
+pass = secret
+dbname = test
 targets = {
           # tablename  #fallbackcolumn ('NOP' to disable)
- 'm2'   : [ 'names',   'full'            ]
+ 'm2': ['names',   'full']
   }
 ```
 
@@ -1528,16 +1546,16 @@ This module requires the following configuration to be present in the configurat
 
 ```ini
 [config:mysql_dynamic]
-host  =  'localhost'
-port  =  3306
-user  =  'dbusername'
-pass  =  'dbpassword'
-dbname  =  'database'
-index   =  'index_table_name'
+host = localhost
+port = 3306
+user = dbusername
+pass = dbpassword
+dbname = database
+index = index_table_name
 
 targets = {
-        # target to use: [ list of fields to ignore and not store ]
-        'target_name' : ['field1', 'field2','field3' ]
+        # target to use: [list of fields to ignore and not store]
+        'target_name': ['field1', 'field2','field3']
     }
 ```
 
@@ -1558,8 +1576,8 @@ the address and port of the MythTV backend instance (&lt;hostname&gt;:&lt;port&g
 timeout = 10  # duration of notification
 targets = {
                           # host:port,            broadcast address
-    'all'               :  [ '192.168.1.40:6544', '192.168.1.255'],
-    'frontend_bedroom'  :  [ '192.168.1.40:6544', '192.168.1.74' ]
+    'all': ['192.168.1.40:6544', '192.168.1.255'],
+    'frontend_bedroom': ['192.168.1.40:6544', '192.168.1.74']
     }
 ```
 
@@ -1578,7 +1596,7 @@ to delivery notifications from _mqttwarn_ to your Android device.
 [config:nma]
 targets = {
                  # api key                                            app         event
-  'myapp'    : [ 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', "Nagios",  "Phone call" ]
+  'myapp': ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', "Nagios",  "Phone call"]
   }
 ```
 
@@ -1601,11 +1619,11 @@ The `nntp` target is used to post articles to an NNTP news server on a particula
 [config:nntp]
 server  = t1.prox
 port    = 119
-; username = "jane@example.com"
-; password = "secret"
+; username = jane@example.com
+; password = secret
 targets = {
     #              from_hdr                       newsgroup
-    'aa'     : [ 'Me and I <jj@example.com>',    'jp.aa' ],
+    'aa': ['Me and I <jj@example.com>',    'jp.aa'],
   }
 ```
 
@@ -1663,10 +1681,10 @@ with the following target definition in `mqttwarn.py`
 
 ```ini
 [config:nsca]
-nsca_host = '172.16.153.112'
+nsca_host = 172.16.153.112
 targets = {
    #              Nagios host_name,     Nagios service_description,
-   'temp'    :  [ 'localhost',          'Current temp via MQTT' ],
+   'temp': ['localhost',          'Current temp via MQTT'],
   }
 
 [arduino/temp]
@@ -1739,8 +1757,8 @@ voice names.)
 [config:osxsay]
 targets = {
                  # voice (see say(1) or `say -v ?`)
-    'victoria' : [ 'Victoria' ],
-    'alex'     : [ 'Alex' ],
+    'victoria': ['Victoria'],
+    'alex': ['Alex'],
   }
 ```
 
@@ -1768,7 +1786,7 @@ not a paying customer of Pastebin you are limited to 25 unlisted and
 ```ini
 [config:pastebinpub]
 targets = {
-    'warn' : [ 'api_dev_key',  # API dev key
+    'warn': ['api_dev_key',  # API dev key
                'username',  # Username
                'password',  # Password
                 1,  # Privacy level
@@ -1795,7 +1813,7 @@ a trailing newline (`\n`), _mqttwarn_ appends one.
 [config:pipe]
 targets = {
              # argv0 .....
-   'wc'    : [ 'wc',   '-l' ]
+   'wc': ['wc',   '-l']
    }
 ```
 
@@ -1808,14 +1826,14 @@ The `postgres` plugin behaves virtually identically to the [MySQL](#mysql) plugi
 
 ```ini
 [config:postgres]
-host  =  'localhost'
-port  =  5432
-user  =  'jane'
-pass  =  'secret'
-dbname  =  'test'
+host = localhost
+port = 5432
+user = jane
+pass = secret
+dbname = test
 targets = {
           # tablename  # fallbackcolumn  # schema
- 'pg'   : [ 'names',   'message',	 'schema' ]
+ 'pg': ['names',   'message',    'schema']
   }
 ```
 
@@ -1886,7 +1904,7 @@ an application key and an application name.
 [config:prowl]
 targets = {
                     # application key                           # app name
-    'pjpm'    :  [ 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'SuperAPP' ]
+    'pjpm': ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'SuperAPP']
     }
 ```
 
@@ -1915,8 +1933,8 @@ It requires an Authorization token, which you can generate after creating an acc
 [config:pushalot]
 targets = {
                    # Authorization token
-    'info'     : ['xxxxxxxxxxxxxxxxxxxxxxx'],
-    'warn'     : ['xxxxxxxxxxxxxxxxxxxxxxx']
+    'info': ['xxxxxxxxxxxxxxxxxxxxxxx'],
+    'warn': ['xxxxxxxxxxxxxxxxxxxxxxx']
     }
 ````
 
@@ -1946,7 +1964,7 @@ the notifications to. To obtain this you need  to follow the instructions at
 [config:pushbullet]
 targets = {
                    # API KEY                  device ID,    recipient_type
-    'warnme'   : [ 'xxxxxxxxxxxxxxxxxxxxxxx', 'yyyyyy',     'tttt' ]
+    'warnme': ['xxxxxxxxxxxxxxxxxxxxxxx', 'yyyyyy',     'tttt']
     }
 ```
 
@@ -1972,10 +1990,10 @@ and one or more _application keys_ which you configure in the targets definition
 [config:pushover]
 callback = None
 targets = {
-    'nagios'     : ['userkey1', 'appkey1', 'sound1'],
-    'alerts'     : ['userkey2', 'appkey2'],
-    'tracking'   : ['userkey1', 'appkey2', 'sound3'],
-    'extraphone' : ['userkey2', 'appkey3']
+    'nagios': ['userkey1', 'appkey1', 'sound1'],
+    'alerts': ['userkey2', 'appkey2'],
+    'tracking': ['userkey1', 'appkey2', 'sound3'],
+    'extraphone': ['userkey2', 'appkey3']
     }
 ```
 
@@ -2034,10 +2052,10 @@ In order to receive pushsafer notifications you need what is called a _private o
 ```ini
 [config:pushsafer]
 targets = {
-    'nagios'     : ['privatekey', 'Device ID', 'Icon', 'Sound', 'Vibration', 'URL', 'Url Title', 'Time2Live'],
-    'tracking'   : ['aliaskey1'],
-    'extraphone' : ['aliaskey2', '', '', '', '', '', '', '60'],
-	'warnme'     : ['aliaskey3', '', '', '', '', '', '', '60']
+    'nagios': ['privatekey', 'Device ID', 'Icon', 'Sound', 'Vibration', 'URL', 'Url Title', 'Time2Live'],
+    'tracking': ['aliaskey1'],
+    'extraphone': ['aliaskey2', '', '', '', '', '', '', '60'],
+    'warnme': ['aliaskey3', '', '', '', '', '', '', '60']
     }
 ```
 
@@ -2062,10 +2080,10 @@ The `redispub` plugin publishes to a Redis channel.
 
 ```ini
 [config:redispub]
-host  =  'localhost'
-port  =  6379
+host = localhost
+port = 6379
 targets = {
-    'r1'      : [ 'channel-1' ]
+    'r1': ['channel-1']
     }
 ```
 
@@ -2079,8 +2097,8 @@ The `rrdtool` plugin updates a round robin database created by [rrdtool](http://
 ```ini
 [config:rrdtool]
 targets = {
-    'living-temp'  : ['/tmp/living-temp.rrd',  '--template', 'temp'],
-    'kitchen-temp' : ['/tmp/kitchen-temp.rrd', '--template', 'temp']
+    'living-temp': ['/tmp/living-temp.rrd',  '--template', 'temp'],
+    'kitchen-temp': ['/tmp/kitchen-temp.rrd', '--template', 'temp']
     }
 ```
 
@@ -2089,7 +2107,7 @@ targets = {
 ```ini
 [config:rrdtool]
 targets = {
-        'battsensor': [ ],
+        'battsensor': [],
         }
 ...
 [datalog-battery-log]
@@ -2109,8 +2127,8 @@ The `serial` plugin sends out received messages to the serial port. Message payl
 [config:serial]
 append_newline = False
 targets = {
-    'serialport1'  : ['/dev/ttyUSB0',  '115200'],
-    'some-device' : ['socket://192.168.1.100:2323', '9600']
+    'serialport1': ['/dev/ttyUSB0',  '115200'],
+    'some-device': ['socket://192.168.1.100:2323', '9600']
     }
 ```
 First parameter in target config can be a portname or an [url handler](https://pythonhosted.org/pyserial/url_handlers.html).
@@ -2125,13 +2143,13 @@ The `slack` plugin posts messages to channels in or users of the [slack.com](htt
 
 ```ini
 [config:slack]
-token = 'xxxx-1234567890-1234567890-1234567890-1234a1'
+token = xxxx-1234567890-1234567890-1234567890-1234a1
 targets = {
                 #   [token,] #channel/@user, username, icon, [as_user]
-   'jpmens'     : [ '@jpmens',   "Alerter",   ':door:'          ],
-   'general'    : [ '#general',  "mqttwarn",  ':syringe:'       ],
-   'test'       : [ '#test',     "BotUser",   ':unused:',  True ],
-   'second-acc' : [ 'xxxx-9999999-9999999-99999999', '#general', "test", ':house:' ],
+   'jpmens': ['@jpmens',   "Alerter",   ':door:'],
+   'general': ['#general',  "mqttwarn",  ':syringe:'],
+   'test': ['#test',     "BotUser",   ':unused:',  True],
+   'second-acc': ['xxxx-9999999-9999999-99999999', '#general', "test", ':house:'],
   }
 ```
 
@@ -2159,7 +2177,7 @@ commits messages routed to such a target immediately.
 [config:sqlite]
 targets = {
                    #path        #tablename
-  'demotable' : [ '/tmp/m.db',  'mqttwarn'  ]
+  'demotable': ['/tmp/m.db',  'mqttwarn']
   }
 ```
 
@@ -2193,7 +2211,7 @@ commits messages routed to such a target immediately.
 [config:sqlite_json2cols]
 targets = {
                    #path        #tablename
-  'demotable' : [ '/tmp/m.db',  'mqttwarn'  ]
+  'demotable': ['/tmp/m.db',  'mqttwarn']
   }
 ```
 
@@ -2206,7 +2224,7 @@ The id is the table index and the timestamp is the insertion date and time in se
 [config:sqlite_timestamp]
 targets = {
                    #path        #tablename
-  'demotable' : [ '/tmp/m.db',  'mqttwarn'  ]
+  'demotable': ['/tmp/m.db',  'mqttwarn']
   }
 ```
 
@@ -2217,16 +2235,16 @@ configuration.
 
 ```ini
 [config:smtp]
-server  =  'localhost:25'
-sender  =  "MQTTwarn <jpm@localhost>"
-username  =  None
-password  =  None
-starttls  =  False
+server = localhost:25
+sender = MQTTwarn <jpm@localhost>
+username = None
+password = None
+starttls = False
 # Optional send msg as html or only plain text
-htmlmsg   =  False
+htmlmsg = False
 targets = {
-    'localj'     : [ 'jpm@localhost' ],
-    'special'    : [ 'ben@gmail', 'suzie@example.net' ]
+    'localj': ['jpm@localhost'],
+    'special': ['ben@gmail', 'suzie@example.net']
     }
 ```
 
@@ -2253,13 +2271,13 @@ Note: using this module lets you specify a username and a password which can be 
 
 ```ini
 [config:ssh]
-host  = '192.168.1.1'
+host = 192.168.1.1
 port  = 22
-user  = 'username'
-pass  = 'password'
+user = username
+pass = password
 targets = {
-		's01'    : [ 'command with one substitution %s' ],
-		's02'    : [ 'command with two substitutions %s__%s' ]
+        's01': ['command with one substitution %s'],
+        's02': ['command with two substitutions %s__%s']
     }
 
 [ssh/+]
@@ -2273,7 +2291,9 @@ targets = ssh:s02
 
 Targets may contain ONE command.
 
-`mosquitto_pub -t dualssh/test -m '{ "args" : ["test","test2"] }'`
+```
+mosquitto_pub -t dualssh/test -m '{ "args": ["test","test2"] }'
+```
 
 
 ### `syslog`
@@ -2283,9 +2303,9 @@ The `syslog` service transfers MQTT messages to a local syslog server.
 ```ini
 [config:syslog]
 targets = {
-              # facility    option
-    'user'   : ['user',     'pid'],
-    'kernel' : ['kernel',   'pid']
+                  # facility    option
+        'user': ['user',     'pid'],
+        'kernel': ['kernel',   'pid']
     }
 ```
 
@@ -2326,26 +2346,28 @@ Configure the `telegram` service WITHOUT chatId:
 ```ini
 [config:telegram]
 timeout = 60
-parse_mode = 'Markdown'
-token = 'mmmmmmmmm:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+parse_mode = Markdown
+token = mmmmmmmmm:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 targets = {
-   #        First Name or @username or #chat_id
-   'j01' : [ 'First Name' ],
-   'j02' : [ '@username' ],
-   'j03' : [ '#chat_id' ]
-}
+        #       First Name or @username or #chat_id
+        'j01': ['First Name'],
+        'j02': ['@username'],
+        'j03': ['#chat_id']
+    }
 ```
+
 Configure the `telegram` service WITH chatid:
+
 ```ini
 [config:telegram]
 timeout = 60
-parse_mode = 'Markdown'
-token = 'mmmmmmmmm:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+parse_mode = Markdown
+token = mmmmmmmmm:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 use_chat_id = True
 targets = {
-    #       chatId (in quotes)
-    'j01' : ['123456789']
-}
+        #       chatId (in quotes)
+        'j01': ['123456789']
+    }
 ```
 
 Possible issue:
@@ -2361,11 +2383,11 @@ The `thingspeak` service publishes data to thingspeak.com using the thingspeak A
 ```ini
 [config:thingspeak]
 targets = {
-                   #API WRITE KEY       field      optional builddata=true/false
-    'field1'   : [ 'XXYYZZXXYYZZXXYY', 'field1' , 'true' ],
-    'field2'   : [ 'XXYYZZXXYYZZXXYY', 'field2' ],
-    'composite': [ 'XXYYZZXXYYZZXXYY', [ 'temp', 'hum' ] ]
-  }
+        #          API WRITE KEY       field      optional builddata=true/false
+        'field1': ['XXYYZZXXYYZZXXYY', 'field1' , 'true'],
+        'field2': ['XXYYZZXXYYZZXXYY', 'field2'],
+        'composite': ['XXYYZZXXYYZZXXYY', ['temp', 'hum']]
+    }
 ```
 Using `builddata=true` you can build an update with multiple fields in one update. Using this function no direct update is performed. Only with the next update without builddata=true all entries are sent (e.g. when multiple sensors are updating different topics, then you can do the build the data and submit when the last sensor is sending the data).
 
@@ -2380,9 +2402,9 @@ The `tootpaste` service is for posting to the [Mastodon social network](https://
 ```ini
 [config:tootpaste]
 targets = {
-             # clientcreds, usercreds, base_url
-    'uno'  : [ 'a.client',  'a.user', 'https://masto.io' ],
-  }
+        #       clientcreds, usercreds, base_url
+        'uno': ['a.client', 'a.user', 'https://masto.io'],
+    }
 ```
 
 The specified `clientcreds` and `usercreds` are paths to files created with the service, as follows:
@@ -2411,22 +2433,24 @@ The two last files are created and should be protected from prying eyes.
 ```ini
 [config:twilio]
 targets = {
-             # Account SID            Auth Token            from              to
-   'hola'  : [ 'ACXXXXXXXXXXXXXXXXX', 'YYYYYYYYYYYYYYYYYY', "+15105551234",  "+12125551234" ]
-   }
+        #         Account SID           Auth Token            from             to
+        'hola': ['ACXXXXXXXXXXXXXXXXX', 'YYYYYYYYYYYYYYYYYY', "+15105551234",  "+12125551234"]
+    }
 ```
 
 ![Twilio test](assets/twillio.jpg)
 
 Requires:
- * a Twilio account
- * [twilio-python](https://github.com/twilio/twilio-python)
+
+* a Twilio account
+* [twilio-python](https://github.com/twilio/twilio-python)
+
 
 ### `twitter`
 
-Notification of one or more [Twitter](http://twitter.com) accounts requires setting
-up an application at [apps.twitter.com](https://apps.twitter.com). For each Twitter
-account, you need four (4) bits which are named as shown below.
+Notification of one or more [Twitter](http://twitter.com) accounts requires
+setting up an application at [apps.twitter.com](https://apps.twitter.com). For
+each Twitter account, you need four (4) bits which are named as shown below.
 
 Upon configuring this service's targets, make sure the four (4) elements of the
 list are in the order specified!
@@ -2434,67 +2458,75 @@ list are in the order specified!
 ```ini
 [config:twitter]
 targets = {
-  'janejol'   :  [ 'vvvvvvvvvvvvvvvvvvvvvv',                              # consumer_key
-                   'wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww',          # consumer_secret
-                   'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',  # access_token_key
-                   'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'           # access_token_secret
-                  ]
-   }
+        'janejol': [
+            'vvvvvvvvvvvvvvvvvvvvvv',                              # consumer_key
+            'wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww',          # consumer_secret
+            'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',  # access_token_key
+            'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'           # access_token_secret
+        ]
+    }
 ```
 
 ![a tweet](assets/twitter.jpg)
 
 Requires:
+
 * A Twitter account
 * app keys for Twitter, from [apps.twitter.com](https://apps.twitter.com)
 * [python-twitter](https://github.com/bear/python-twitter)
 
+
 ### `websocket`
 
-The websocket service can be used to send data to a websocket server defined by its uri. `ws://` or `wss://` schemas
-are supported.
+The websocket service can be used to send data to a websocket server defined by
+its uri. `ws://` or `wss://` schemas are supported.
 
 ```ini
 [config:websocket]
 targets = {
-        # targetid        : [ 'wsuri']
-        'wssserver' : [ 'ws://localhost/ws' ],
-}
+        # targetid: ['wsuri']
+        'wssserver': ['ws://localhost/ws'],
+    }
 ```
 
 Requires:
-* [websocket-client](https://pypi.python.org/pypi/websocket-client/) - pip install websocket-client
+
+* [websocket-client](https://pypi.python.org/pypi/websocket-client/)
+
 
 ### `xbmc`
 
-This service allows for on-screen notification pop-ups on [XBMC](http://xbmc.org/) instances. Each target requires
-the address and port of the XBMC instance (<hostname>:<port>), and an optional username and password if authentication is required.
+This service allows for on-screen notification pop-ups on
+[XBMC](http://xbmc.org/) instances. Each target requires the address and port
+of the XBMC instance (<hostname>:<port>), and an optional username and password
+if authentication is required.
 
 ```ini
 [config:xbmc]
 targets = {
-                          # host:port,           [user], [password]
-    'living_with_auth' :  [ '192.168.1.40:8080', 'xbmc', 'xbmc' ],
-    'bedroom_no_auth'  :  [ '192.168.1.41:8080' ]
+        #                    host:port, user, password
+        'living_with_auth': ['192.168.1.40:8080', 'xbmc', 'xbmc'],
+        'bedroom_no_auth': ['192.168.1.41:8080']
     }
 ```
 
 | Topic option  |  M/O   | Description                            |
 | ------------- | :----: | -------------------------------------- |
 | `title`       |   O    | notification title                     |
-| `image`       |   O    | notification image URL  ([example](https://github.com/jpmens/mqttwarn/issues/53#issuecomment-39691429))|
+| `image`       |   O    | notification image URL ([example](https://github.com/jpmens/mqttwarn/issues/53#issuecomment-39691429)) |
+
 
 ### `xmpp`
 
-The `xmpp` service sends notification to one or more [XMPP](http://en.wikipedia.org/wiki/XMPP)
-(Jabber) recipients.
+The `xmpp` service sends notification to one or more
+[XMPP](http://en.wikipedia.org/wiki/XMPP) (Jabber) recipients.
 
 ```ini
 [config:xmpp]
-sender = 'mqttwarn@jabber.server'
-password = 'Password for sender'
+sender = mqttwarn@jabber.server
+password = Password for sender
 targets = {
-    'admin' : [ 'admin1@jabber.server', 'admin2@jabber.server' ]
+        'admin': ['admin1@jabber.server', 'admin2@jabber.server']
     }
 ```
 
@@ -2502,36 +2534,39 @@ Targets may contain more than one recipient, in which case all specified
 recipients get the message.
 
 Requires:
+
 * XMPP (Jabber) accounts (at least one for the sender and one for the recipient)
 * [xmpppy](http://xmpppy.sourceforge.net)
 
+
 ### `xively`
 
-The `xively` service can send a subset of your data to [Xively](http://xively.com) per defined feedid.
+The `xively` service can send a subset of your data to
+[Xively](http://xively.com) per defined feedid.
 
 ```ini
 [config:xively]
-apikey = '1234567890abcdefghiklmnopqrstuvwxyz'
+apikey = 1234567890abcdefghiklmnopqrstuvwxyz
 targets = {
-        # feedid        : [ 'datastream1', 'datastream2']
-        '1234567' : [ 'temperature', 'waterlevel' ],
-        '7654321' : [ 'dataItemA' ]
-  }
+        # feedid: ['datastream1', 'datastream2']
+        '1234567': ['temperature', 'waterlevel'],
+        '7654321': ['dataItemA']
+    }
 ```
 
-Publishing the following JSON message will add a datapoint to the `temperature` and
-`waterlevel` channel of your xively feed 1234567 (`humidity` will be ignored,
-as it's not defined in the xively
-configuration above):
+Publishing the following JSON message will add a datapoint to the `temperature`
+and `waterlevel` channel of your xively feed 1234567 (`humidity` will be
+ignored, as it's not defined in the xively configuration above):
 
 ```
 mosquitto_pub -t "osx/json" -m '{"temperature":15,"waterlevel":100,"humidity":35}'
 ```
 
-
 Requires:
+
 * [Xively](http://xively.com) account with an already existing Feed
-* [xively-python](https://github.com/xively/xively-python) - pip install xively-python
+* [xively-python](https://github.com/xively/xively-python)
+
 
 ### `zabbix`
 
@@ -2543,23 +2578,25 @@ The `zabbix` service serves two purposes:
 ![Zabbix](assets/zabbix.png)
 
 To create an appropriate discovery host, in Zabbix:
+
 - Configuration->Hosts->Create host (`mqttwarn01`)
 - Configuration->Discovery->Create discovery rule
   - Name: `MQTTwarn` (any suitable name)
   - Type: `Zabbix trapper`
-  - Key: `mqtt.discovery` (this must match the configured `discovery_key`, which defaults to `mqtt.discovery`)
+  - Key: `mqtt.discovery` (this must match the configured `discovery_key`,
+    which defaults to `mqtt.discovery`)
   - Allowed hosts: `192.168.1.130,127.0.0.1` (example)
 
 The target and topic configuration look like this:
 
 ```ini
 [config:zabbix]
-host = "mqttwarn01"  # an existing host configured in Zabbix
-discovery_key = "mqtt.discovery"
+host = mqttwarn01  # an existing host configured in Zabbix
+discovery_key = mqtt.discovery
 targets = {
-            # Trapper address   port
-    't1'  : [ '172.16.153.110', 10051 ],
-  }
+        #      Trapper address   port
+        't1': ['172.16.153.110', 10051],
+    }
 
 [zabbix/clients/+]
 alldata = ZabbixData()
@@ -2602,16 +2639,16 @@ def ZabbixData(topic, data, srv=None):
 
     ''' This "key" is actually an LLD item which we've pre-created in the Zabbix
         UI. Configuration->Hosts->Discovery->Item prototypes->Create item prototype
-	   Name: MW client $1
-	   Type: Zabbix trapper
-	   Key: mqttwarn.id[{#MQTTHOST}]
-	   Type: text (can be any suitable type)
+       Name: MW client $1
+       Type: Zabbix trapper
+       Key: mqttwarn.id[{#MQTTHOST}]
+       Type: text (can be any suitable type)
 
-	Publishing a value with
-	$ mosquitto_pub -t zabbix/item/mqttwarn01/mqttwarn.id[m02] -m 'stormy'
-	will mean that we'll use the client "mqttwarn01" (see previously) and
-	the item named "mqttwarn.id[m02]" which is the name of a previously
-	discovered item.
+    Publishing a value with
+    $ mosquitto_pub -t zabbix/item/mqttwarn01/mqttwarn.id[m02] -m 'stormy'
+    will mean that we'll use the client "mqttwarn01" (see previously) and
+    the item named "mqttwarn.id[m02]" which is the name of a previously
+    discovered item.
     '''
 
     if topic.startswith('zabbix/item/'):
@@ -2619,6 +2656,7 @@ def ZabbixData(topic, data, srv=None):
 
     return dict(client=client, key=key, status_key=status_key)
 ```
+
 
 ## Plugins
 
@@ -2648,6 +2686,7 @@ item = {
 
 ## Advanced features
 
+
 ### JSON output serialization
 
 When receiving JSON data like `{"data": {"humidity": 62.18}}`, you might want
@@ -2659,8 +2698,9 @@ and a transformation data dict (see below) as arguments.
 Example:
 
 ```ini
-format = "{data}"
+format = myfunctions:data_format()
 ```
+
 
 ### Transformation data
 
@@ -3109,6 +3149,7 @@ You'll need at least the following components:
 * Python 2.x (tested with 2.6 and 2.7)
 * An MQTT broker (e.g. [Mosquitto](http://mosquitto.org))
 * The Paho Python module: `pip install paho-mqtt`
+
 
 ## Notes
 
