@@ -18,8 +18,10 @@ same way. Here's an example service configuration section in ``mqttwarn.ini``:
     user = 'username'
     password = 'password'
     database = 'databasename'
-    minconn = 0                 ; initial/minimum number of database pool connections
-    maxconn = 4                 ; maximum number of concurrent database pool connections
+    ; initial/minimum number of database pool connections
+    minconn = 0
+    ; maximum number of concurrent database pool connections
+    maxconn = 4
     targets = {
             'table1': ['public.person'), 'message']
         }
