@@ -42,24 +42,26 @@ def is_funcspec(s):
 
 def load_function(dottedpath, name, extra_pkgs=None):
     mod = None
+    error = None
 
     if not name.startswith('.'):
         try:
             mod = importlib.import_module(dottedpath)
-        except ModuleNotFoundError:
-            pass
+        except ModuleNotFoundError as exc:
+            error = str(exc)
 
     if not mod and extra_pkgs:
         for pkg in extra_pkgs:
             try:
                 mod = importlib.import_module(pkg + '.' + dottedpath)
-            except ModuleNotFoundError:
-                pass
+            except ModuleNotFoundError as exc:
+                error = str(exc)
             else:
                 break
 
     if not mod:
-        raise ModuleNotFoundError("Could not find module '%s'." % dottedpath)
+        raise ModuleNotFoundError("Could not import module '%s': %s" %
+                                  (dottedpath, error or "unknown error"))
 
     func = getattr(mod, name, getattr(mod, name.capitalize(), None))
 
