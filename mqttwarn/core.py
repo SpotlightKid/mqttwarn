@@ -526,7 +526,7 @@ def processor(jobq, worker_id=None, job_timeout=10):
         # all may alter the data dict.
         title = handler.xform('title', SCRIPTNAME, data)
         image = handler.xform('image', '', data)
-        message = handler.xform('format', job.msg.payload_string(), data)
+        message = handler.xform('format', data['payload'], data)
 
         item = Struct(
             addrs=job.service['targets'][target],
