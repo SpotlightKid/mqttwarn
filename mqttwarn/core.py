@@ -74,14 +74,17 @@ topichandlers = {}
 # Class with helper functions which is passed to each plugin
 # and its global instantiation
 class Service(object):
-    def __init__(self, mqttc, logger):
+    def __init__(self, name, mqttc, logger):
+        # Identifies the service. For service plugins, will be
+        # the name of the config section, which may differ from
+        # the name of the module implementing the plugin.
+        self.name = name
         # Reference to MQTT client object
         self.mqttc = mqttc
-
         # Reference to logging object
         self.log = log
-
-        # Name of self ("mqttwarn", mostly)
+        # Name of script excuting service ("mqttwarn", mostly)
+        # XXX: is this really needed in addition to service name?
         self.SCRIPTNAME = SCRIPTNAME
 
 
@@ -368,7 +371,7 @@ def on_message(mosq, userdata, msg):
 # End of MQTT broker callbacks
 
 
-def make_service(mqttc=None, name=None):
+def make_service(name, logname=None, mqttc=None):
     """Service object factory.
 
     Prepare service object for plugin.
@@ -379,9 +382,8 @@ def make_service(mqttc=None, name=None):
     :return:      Service object ready for being passed to plugin instance.
 
     """
-    name = name or 'unknown'
-    logger = logging.getLogger(name)
-    service = Service(mqttc, logger)
+    logger = logging.getLogger(logname or name)
+    service = Service(name, mqttc, logger)
     return service
 
 
@@ -526,7 +528,7 @@ def processor(jobq, worker_id=None, job_timeout=10):
         # all may alter the data dict.
         title = handler.xform('title', SCRIPTNAME, data)
         image = handler.xform('image', '', data)
-        message = handler.xform('format', job.msg.payload_string(), data)
+        message = handler.xform('format', data['payload'], data)
 
         item = Struct(
             addrs=job.service['targets'][target],
@@ -608,7 +610,7 @@ def load_services(services, mqttc):
         try:
             plugin_func = load_function(modname, 'plugin', extra_pkgs=extra_pkgs)
             service_logger_name = 'mqttwarn.services.{}'.format(service)
-            srv = make_service(mqttc=mqttc, name=service_logger_name)
+            srv = make_service(service, mqttc=mqttc, logname=service_logger_name)
 
             if isclass(plugin_func):
                 plugin_func = plugin_func(srv, service_config)
@@ -774,7 +776,7 @@ def connect():
             now = cf.getboolean(section, 'now', fallback=False)
             log.debug("Scheduling function '%s' as periodic task to run every %s seconds via "
                       "[cron:%s] section.", funcname, interval, name)
-            service = make_service(mqttc=mqttc, name='mqttwarn.cron.' + name)
+            service = make_service(name, mqttc=mqttc, logname='mqttwarn.cron.' + name)
             ptlist[name] = PeriodicThread(callback=func, period=interval, name=name, srv=service,
                                           now=now)
             ptlist[name].start()
@@ -849,7 +851,7 @@ def run_plugin(config=None, name=None, data=None):
     # Load designated service plugins
     load_services([name])
     service_logger_name = 'mqttwarn.services.{}'.format(name)
-    srv = make_service(mqttc=None, name=service_logger_name)
+    srv = make_service(name, mqttc=None, logname=service_logger_name)
 
     # Build a mimikry item instance for feeding to the service plugin
     item = Struct(**data)

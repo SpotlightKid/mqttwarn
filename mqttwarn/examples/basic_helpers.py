@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-# mqttwarn example function extensions
-
-import json
-
+#
+# mqttwarn example helper functions for topic handlers
+#
 
 def topic2targetlist(topic=None, data=None, srv=None):
     """Compute list of topic targets based on MQTT topic and/or transformation data.

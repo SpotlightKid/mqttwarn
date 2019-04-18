@@ -2034,7 +2034,7 @@ doesn't have a trailing newline (`\n`), _mqttwarn_ appends one.
 targets = {
         #      argv0, argv1 ...
         'wc': ['wc',  '-l']
-   }
+    }
 ```
 
 Note, that for each message targeted to the `pipe` service, a new process is

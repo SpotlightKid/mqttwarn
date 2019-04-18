@@ -11,57 +11,82 @@ import tempfile
 
 
 def plugin(srv, item):
-    """excute service plugin.
+    """``execute`` service plugin.
 
     Launches the specified external program and its arguments.
 
-    Target address must be the command line to run as list of strings,
-    with the actual program to run as the fist argument.
+    The target address must be the command line to run as list of strings, with
+    the actual program to run as the fist argument.
 
     Example:
 
+    .. code-block:: ini
+
         [config:execute]
         targets = {
-                         # argv0, argv1, ..., argvn
+                #         argv0, argv1, ..., argvn
                 'touch': ['touch', '/tmp/executed']
-           }
+            }
 
-    To pass the published MQTT payload to the command, use the ``[TEXT]``
-    placeholder as (part of) the value of any argument and all occurences
-    of this placeholder will be replaced with the payload as string
-    (decoded using UTF-8 encoding).
+    Arguments (but not the program name), will be optionally formatted using
+    the payload transformation data as the substitution dictionary for
+    formatting placeholders. The substitution dictionary also contains the
+    notfication message under the key ``message``. This is the MQTT message
+    payload, which itself will have been possibly formatted or transformed via
+    the ``format`` option of the topic handler, which triggered the ``execute``
+    service. By default it will be the payload as a string, decoded using UTF-8
+    encoding.
 
-    The placeholder string can be changed with the ``text_replace`` option.
+    To enable argument formatting, set the ``format_args`` option in the
+    service config section to ``true``.
 
+    Argument formatting example:
+
+    .. code-block:: ini
 
         [config:execute]
         targets = {
-                          # argv0, argv1, ..., argvn
-                'volume': ['amixer', 'sset', 'Master', '[vol]']
-           }
-        text_replace = '[vol]'
+                'volume': ['amixer', 'sset', 'Master', '{message}%']
+            }
+        format_args = true
 
         [mixer/master]
         targets: execute:volume
 
-    The working directory for the external program can be set with the the
-    `cwd` option. It defaults to the standard temporary directory as returned
-    by ``tempfile.gettempdir()``.
+    The working directory for the external program can be set with the ``cwd``
+    option. It defaults to the standard temporary directory as returned by
+    ``tempfile.gettempdir()``.
+
+    Note, that for each message targeted to the ``execute`` service, a new
+    process is spawned (fork/exec), so it is quite resource-intensive.
 
     """
     srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
-    replace = item.config.get('text_replace', '[TEXT]')
+    if not item.addrs or not item.addrs[0]:
+        srv.log.error("No command configured for target '%s'.", item.target)
+        return False
+
     cwd = item.config.get('cwd', tempfile.gettempdir())
-    text = item.message
-    cmd = [arg.replace(replace, text) for arg in item.addrs]
+
+    if item.config.get('format_args', False):
+        cmd = [item.addrs[0]]
+        for arg in item.addrs[1:]:
+            try:
+                cmd.append(arg.format(message=item.message, **item.data))
+            except Exception as exc:
+                srv.log.warn("Could not format argument '%s' of target '%s': %s",
+                             arg, item.target, exc)
+                cmd.append(arg)
+    else:
+        cmd = item.addrs
 
     try:
         srv.log.debug("Executing command: %s", cmd)
         # Capture command stdout and stderr output,
         # so that it does not end up on mqttwarn's stdout.
         res = subprocess.check_output(cmd, stdin=None, stderr=subprocess.STDOUT, shell=False,
-                                       universal_newlines=True, cwd=cwd)
+                                      universal_newlines=True, cwd=cwd)
     except OSError as exc:
         srv.log.error("Cannot execute '%s': %s", cmd, exc)
     except subprocess.CalledProcessError as exc:

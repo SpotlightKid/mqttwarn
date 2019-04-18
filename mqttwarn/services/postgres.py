@@ -23,7 +23,7 @@ same way. Here's an example service configuration section in ``mqttwarn.ini``:
     ; maximum number of concurrent database pool connections
     maxconn = 4
     targets = {
-            'table1': ['public.person'), 'message']
+            'table1': ['public.person', 'message']
         }
 
     [pq/1]
@@ -244,8 +244,7 @@ class Plugin:
             self.log.error("postgres target incorrectly configured: %s", exc)
             return False
 
-        # Attempting to format each JSON data value with the transformation data.
-
+        # Attempt to format each JSON data value with the transformation data.
         for key, value in item.data.items():
             if key not in META_KEYS:
                 try:
