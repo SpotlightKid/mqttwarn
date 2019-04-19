@@ -14,8 +14,9 @@ def plugin(srv, item):
     """``pipe`` service plugin.
 
     The ``pipe`` service launches the specified program and its arguments and
-    pipes the (possibly formatted) message to the program's *stdin*. If the
-    message doesn't have a trailing newline (``\n``), the service appends one.
+    pipes the (possibly formatted) MQTT message payload to the program's
+    *stdin*. If the message doesn't have a trailing newline (``\n``), the
+    service appends one.
 
     The target address must be the command line to run as list of strings, with
     the actual program to run as the fist argument.
