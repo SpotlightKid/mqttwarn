@@ -2136,8 +2136,8 @@ application key and an application name.
 ```ini
 [config:prowl]
 targets = {
-                    # application key                           # app name
-    'pjpm': ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'SuperAPP']
+        #        application key                             app name
+        'pjpm': ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', 'SuperAPP']
     }
 ```
 
