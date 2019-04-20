@@ -26,7 +26,7 @@ def plugin(srv, item):
             }
         ]
 
-    Service target addresses must be given as one or two-item tuples, with the URL to send an
+    Service target addresses must be given as a one or two-item sequence, with the URL to send an
     HTTP(S) request to as the first item and the request parameters as an optional second item.
 
     All keys in the parameter dict, if given, are optional (default values shown above).
@@ -72,7 +72,7 @@ def plugin(srv, item):
     auth = params.get('auth', False)
     use_json = params.get('json', False)
     timeout = params.get("timeout", 10)
-    kwargs = {'headers': {'User-agent', srv.SCRIPTNAME}}
+    kwargs = {'headers': {'User-agent': srv.SCRIPTNAME}}
 
     if auth and isinstance(auth, (tuple, list)) and len(auth) == 2:
         kwargs['auth'] = auth
@@ -98,7 +98,7 @@ def plugin(srv, item):
                 data[key] = item.data.get(value[1:], None)
             else:
                 try:
-                    data[key] = value.format(**item.data).encode('utf-8')
+                    data[key] = value.format(**item.data)
                 except Exception as exc:
                     srv.log.debug("Parameter '%s' cannot be formatted: %s", key, exc)
                     return False
@@ -110,12 +110,13 @@ def plugin(srv, item):
         if data:
             kwargs['json' if use_json else 'data'] = data
         else:
-            data = item.message
+            kwargs['data'] = item.message
     else:
         srv.log.warn("Unsupported HTTP method: %s", method)
         return False
 
     try:
+        srv.log.debug("kwargs: %r", kwargs)
         response = requests.request(method, url, timeout=timeout, **kwargs)
         response.raise_for_status()
     except Exception as exc:
