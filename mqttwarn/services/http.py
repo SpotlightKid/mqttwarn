@@ -1,113 +1,125 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__author__    = 'Jan-Piet Mens <jpmens()gmail.com>'
-__copyright__ = 'Copyright 2014 Ben Jones'
-__license__   = """Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-v10.html)"""
+__author__ = "Christopher Arndt <info@chrisarndt.de>"
+__copyright__ = "2019 Christopher Arndt"
+__license__ = "MIT License"
 
-import urllib
-import urllib2
-import base64
-try:
-    import json
-except ImportError:
-    import simplejson as json
+
+import requests
+import six
+
 
 def plugin(srv, item):
-    ''' addrs: (method, url, dict(params), list(username, password), json) '''
+    """mqttwarn ``http`` service plugin.
 
+    .. code-block:: python
+
+        'target': [
+            url,                  # only HTTP and HTTPS are supported
+            {
+                'method': 'GET',  # Request method, possible values: 'GET', 'POST'
+                'data': {},       # Request data dictionary (see below)
+                'auth': (),       # Credentials for HTTP Basic Auth, a (username, password) tuple
+                'json': False,    # If True, send JSON encoded request data (POST requests only)
+                'timeout': 10     # Request timeout in seconds (for connect and response read)
+            }
+        ]
+
+    Service target addresses must be given as one or two-item tuples, with the URL to send an
+    HTTP(S) request to as the first item and the request parameters as an optional second item.
+
+    All keys in the parameter dict, if given, are optional (default values shown above).
+
+    If the service config option ``format_url`` is true, the URL will be formatted using the
+    MQTT payload data transformation dict. Errors on formatting will abort the service call.
+
+    Each value in the request data dictionary (if it is a string) is subjected to string formatting
+    using the MQTT payload data transformation dict. Errors on formatting will be ignored and the
+    original value is kept as is.
+
+    As a special case, if the value starts with an ``@`` character (e.g. ``'@name'``), it will not
+    be formatted via ``.format()``; instead, the value (minus the ``@``) is used as a key in the
+    transformation data dictionary to look up the value directly. This can be used, for example, to
+    send non-string values in JSON-encoded request data. If the key is not found, the value will be
+    set to ``None``. Unless the request data is send JSON-encoded, the corresponding request data
+    item then will be not be sent.
+
+    Requires:
+
+    * requests_
+    * six_
+
+    .. _requests: https://pypi.org/project/requests/
+    .. _six: https://pypi.org/project/six/
+
+    """
     srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
-    method = item.addrs[0]
-    url    = item.addrs[1]
-    params = item.addrs[2]
-    timeout = item.config.get('timeout', 60)
-
-    auth = None
     try:
-        username, password = item.addrs[3]
-        auth = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
-    except:
-        pass
+        url = item.addrs[0]
+    except IndexError:
+        srv.error("Service target '%s:%s' has no URL configured.")
+        return False
 
-    tojson = None
     try:
-        tojson = item.addrs[4]
-    except:
-        pass
+        params = item.addrs[1]
+    except IndexError:
+        params = {}
 
-    # Try and transform the URL. Use original URL if it's not possible
-    try:
-        url = url.format(**item.data)
-    except:
-        pass
+    method = params.get('method', 'GET').upper()
+    data = params.get('data')
+    auth = params.get('auth', False)
+    use_json = params.get('json', False)
+    timeout = params.get("timeout", 10)
+    kwargs = {'headers': {'User-agent', srv.SCRIPTNAME}}
 
-    if params is not None:
-        for key in params.keys():
+    if auth and isinstance(auth, (tuple, list)) and len(auth) == 2:
+        kwargs['auth'] = auth
 
-            # { 'q' : '@message' }
-            # Quoted field, starts with '@'. Do not use .format, instead grab
-            # the item's [message] and inject as parameter value.
-            if params[key].startswith('@'):         # "@message"
-                params[key] = item.get(params[key][1:], "NOP")
+    if item.config.get('format_url', False):
+        # Try to transform the URL if the service's 'format_url' is truthy.
+        # Fail service call on errors.
+        try:
+            url = url.format(**item.data)
+        except Exception as exc:
+            srv.log.debug("URL cannot be formatted: %s", exc)
+            return False
 
+    if data is not None:
+        for key, value in data.items():
+            if not isinstance(value, six.string_types):
+                continue
+
+            # Request data dict value starts with '@':
+            # use it as a key to look up the actual value in the MQTT
+            # payload data transformation dict.
+            if value.startswith('@'):  # '@message'
+                data[key] = item.data.get(value[1:], None)
             else:
                 try:
-                    params[key] = params[key].format(**item.data).encode('utf-8')
+                    data[key] = value.format(**item.data).encode('utf-8')
                 except Exception as exc:
-                    srv.log.debug("Parameter %s cannot be formatted: %s" % (key, exc))
+                    srv.log.debug("Parameter '%s' cannot be formatted: %s", key, exc)
                     return False
 
-    message  = item.message
+    if method == 'GET':
+        if data is not None:
+            kwargs['params'] = data
+    elif method == 'POST':
+        if data:
+            kwargs['json' if use_json else 'data'] = data
+        else:
+            data = item.message
+    else:
+        srv.log.warn("Unsupported HTTP method: %s", method)
+        return False
 
-    if method.upper() == 'GET':
-        try:
-            if params is not None:
-                resource = url
-                if not resource.endswith('?'):
-                    resource = resource + '?'
-                resource = resource + urllib.urlencode(params)
-            else:
-                resource = url
+    try:
+        response = requests.request(method, url, timeout=timeout, **kwargs)
+        response.raise_for_status()
+    except Exception as exc:
+        srv.log.warn("%s request to %s failed: %s", method, url, exc)
+        return False
 
-            request = urllib2.Request(resource)
-            request.add_header('User-agent', srv.SCRIPTNAME)
-
-            if auth is not None:
-                request.add_header("Authorization", "Basic %s" % auth)
-
-            resp = urllib2.urlopen(request, timeout=timeout)
-            data = resp.read()
-        except Exception as exc:
-            srv.log.warn("Cannot GET %s: %s" % (resource, exc))
-            return False
-
-        return True
-
-    if method.upper() == 'POST':
-        try:
-            request = urllib2.Request(url)
-            if params is not None:
-                if tojson is not None:
-                    encoded_params = json.dumps(params)
-                    request.add_header('Content-Type', 'application/json')
-                else:
-                    encoded_params = urllib.urlencode(params)
-            else:
-                encoded_params = message
-
-            request.add_data(encoded_params)
-            request.add_header('User-agent', srv.SCRIPTNAME)
-            if auth is not None:
-                request.add_header("Authorization", "Basic %s" % auth)
-            resp = urllib2.urlopen(request, timeout=timeout)
-            data = resp.read()
-            # print "POST returns ", data
-        except Exception as exc:
-            srv.log.warn("Cannot POST %s: %s" % (url, exc))
-            return False
-
-        return True
-
-    srv.log.warn("Unsupported HTTP method: %s" % (method))
-    return False
+    return True
