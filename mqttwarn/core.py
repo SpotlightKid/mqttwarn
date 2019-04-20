@@ -303,7 +303,7 @@ def on_connect(mosq, userdata, flags, result_code):
                 if topic in subscribed:
                     continue
 
-                log.debug("Subscribing to %s (qos=%d).", topic, qos)
+                log.debug("Subscribing to '%s', QOS %d.", topic, qos)
                 mqttc.subscribe(topic, qos)
                 subscribed.add(topic)
 
