@@ -91,8 +91,6 @@ class Plugin:
     def close(self):
         self.log.debug("'osc' service close called.")
 
-    __del__ = close
-
     def plugin(self, srv, item):
         srv.log.debug("*** MODULE=%s: service=%s, target=%s", __file__, item.service, item.target)
 
