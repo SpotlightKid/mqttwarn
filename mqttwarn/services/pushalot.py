@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # The code for pushalot() plugin for mqttwarn is based on other plugins

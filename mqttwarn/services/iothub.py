@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 __author__    = 'Morten Høybye Frederiksen <morten()mfd-consult.dk>'

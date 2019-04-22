@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 __author__    = 'Fabian Affolter <fabian()affolter-engineering.ch>'

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # __originalauthor__ = "Jan-Piet Mens <jpmens()gmail.com>"

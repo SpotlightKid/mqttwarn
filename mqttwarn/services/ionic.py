@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 __author__ = 'hubble2webb <hubble2webb@users.noreply.github.com>'

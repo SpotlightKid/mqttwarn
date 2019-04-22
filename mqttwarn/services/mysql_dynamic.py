@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # Credits to Jan-Piet Mens for the mysql.py code which served as basis for this module

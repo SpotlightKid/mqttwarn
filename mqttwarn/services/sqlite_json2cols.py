@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 __author__ = "Vium <https://github.com/Vium>, Christopher Arndt <info@chrisarndt.de>"

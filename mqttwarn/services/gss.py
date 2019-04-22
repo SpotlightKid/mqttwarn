@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 __author__    = 'Jan Badenhorst <janhendrik.badenhorst()gmail.com>'

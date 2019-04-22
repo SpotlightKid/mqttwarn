@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 __author__ = "Philipp Adelt <autosort-github@philipp.adelt.net>, based on code by Jan Badenhorst"
