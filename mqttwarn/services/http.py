@@ -59,7 +59,7 @@ def plugin(srv, item):
     try:
         url = item.addrs[0]
     except IndexError:
-        srv.error("Service target '%s:%s' has no URL configured.")
+        srv.error("Service target '%s:%s' has no URL configured.", item.service, item.target)
         return False
 
     try:
