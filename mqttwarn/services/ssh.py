@@ -40,18 +40,18 @@ def credentials(host, user=None, password=None, port=22):
 
 
 def plugin(srv, item):
-    """ssh service plugin.
+    """mqttwarn ``ssh`` service plugin.
 
-    The ``ssh`` service can run commands over ssh. If both user and password are defined in the
+    The ``ssh`` service can run commands over SSH. If both user and password are defined in the
     service config, they will be used to connect to the host. If no user is defined in the service
     config, the service will parse the user's ssh config file (``~/.ssh/config``) to see which SSH
     key (``IdentityFile``) to use for the given host name. The password, if set, will be used as
-    the passphrase to unlock the key. If the SSH config also defines a `User` and `Port` for the
+    the passphrase to unlock the key. If the SSH config also defines a ``User` and ``Port` for the
     given host name, they will be used too.
 
     If using a key, only the host is required, but if no username is set either via the service or
     the SSH config, the connection will use the username of the user the mqttwarn process runs as,
-    which may not be what is intended. If the SSH config
+    which may not be what is intended.
 
     .. note:: using this module lets you specify a username and a password, which can be used to
         login to the target system. As such, your ``mqttwarn.ini`` configuration file should be
@@ -59,8 +59,8 @@ def plugin(srv, item):
         with credentials as well.)
 
         Also, anyone, who can publish to the MQTT topics defined by the topic handlers for this
-        service can run trigger execution of the remote commands without further authetication.
-        Make sure, the ACLfor these topics on your MQTT broker are set up accordingly.
+        service can trigger the execution of the remote commands without further authentication.
+        Make sure, the ACL for these topics on your MQTT broker are set up accordingly.
 
     Each service target specifies *one* command to execute on the remote host as a string. The
     string can contain placeholders for arguments (using ``str.format()`` syntax). The arguments
@@ -119,7 +119,6 @@ def plugin(srv, item):
     ssh.load_system_host_keys()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     creds = credentials(host, user=user, password=password, port=port)
-
 
     try:
         ssh.connect(**creds)
